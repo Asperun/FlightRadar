@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using FlightRadar.Models;
 using FlightRadar.Services.Events;
 
@@ -16,7 +17,10 @@ namespace FlightRadar.Services
 
         public event EventHandler<NotificationArgs>? NotificationEvent;
 
-        public void BroadcastUpdate(List<Plane> newPlanes) => NotificationEvent?.Invoke(this, new NotificationArgs(newPlanes));
+        public void BroadcastUpdate(List<Plane> newPlanes)
+        {
+            NotificationEvent?.Invoke(this, new NotificationArgs(newPlanes));
+        }
 
         public int GetSubscribersCount() => NotificationEvent != null ? NotificationEvent.GetInvocationList().Length : 0;
     }

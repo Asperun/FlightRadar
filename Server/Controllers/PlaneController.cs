@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Services.Events;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Logging;
 
 namespace FlightRadar.Controllers
@@ -36,8 +41,8 @@ namespace FlightRadar.Controllers
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<Plane>>> GetAllPlanes()
         {
+            Console.WriteLine("Empty response?");
             var planes = await planeService.GetAllAsync();
-
             if (planes == null || !planes.Any()) return NotFound();
             return Ok(planes);
         }
@@ -45,18 +50,18 @@ namespace FlightRadar.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Plane>> GetById(int id)
         {
+            Console.WriteLine("GetById");
             var plane = await planeService.GetByIdAsync(id);
-
             if (plane == null) return NotFound();
-
             return Ok(plane);
         }
 
         [HttpGet("findInArea")]
-        public async Task<ActionResult<IEnumerable<Plane>>> FindInArea([FromQuery] double minLat,
-                                                                       [FromQuery] double maxLat,
-                                                                       [FromQuery] double minLong,
-                                                                       [FromQuery] double maxLong)
+        public async Task<ActionResult<IEnumerable<Plane>>> FindInArea([FromQuery] float minLat,
+                                                                       [FromQuery] float maxLat,
+                                                                       [FromQuery] float minLong,
+                                                                       [FromQuery] float maxLong,
+                                                                       [FromQuery] short limitPlanes)
         {
             var planes = await planeService.GetInAreaAsync(minLat, maxLat, minLong, maxLong);
 
@@ -64,61 +69,57 @@ namespace FlightRadar.Controllers
             return Ok(planes);
         }
 
-        // [HttpGet("findInAreaSse")]
-        public async Task FindInAreaSse([FromQuery] double minLat,
-                                        [FromQuery] double maxLat,
-                                        [FromQuery] double minLong,
-                                        [FromQuery] double maxLong)
-
-        {
-            // var response = Response;
-            Response.Headers.Add("Content-Type", "text/event-stream");
-
-            logger.LogWarning("Established connection to {IpAddress}",
-                              Request.HttpContext.Connection.RemoteIpAddress?.ToString());
-
-            var stopwatch = new Stopwatch();
-            while (true)
-            {
-                if (HttpContext.RequestAborted.IsCancellationRequested)
-                {
-                    logger.LogWarning("Cancelling connection to {IpAddress}",
-                                      Request.HttpContext.Connection.RemoteIpAddress?.ToString());
-                    break;
-                }
-
-                var planes = await planeService.GetInAreaAsync(minLat, maxLat, minLong, maxLong);
-                stopwatch.Start();
-                // await Response.WriteAsync(JsonSerializer.SerializeAsync(Response.Body,planes).ToString() ?? string.Empty);
-                await JsonSerializer.SerializeAsync(Response.Body, planes);
-                await Response.Body.FlushAsync();
-                stopwatch.Stop();
-                logger.LogWarning("Sent Planes to client in {TimeInMs}ms", stopwatch.ElapsedMilliseconds);
-                await Task.Delay(5 * 1000);
-            }
-        }
-
-
         [Produces("text/event-stream")]
-        [HttpGet("findInAreaSse")]
-        public async Task SubscribeToPlaneSse(CancellationToken cancellationToken)
+        [HttpGet("subscribeToPlanes")]
+        public async Task SubscribeToAllPlaneSse([FromQuery] float minLat,
+                                                 [FromQuery] float maxLat,
+                                                 [FromQuery] float minLong,
+                                                 [FromQuery] float maxLong,
+                                                 [FromQuery] short limitPlanes,
+                                                 CancellationToken cancellationToken)
         {
             Response.Headers.Add("Content-Type", "text/event-stream");
             Response.Headers.Add("Cache-Control", "no-cache");
-            
-            var data = new { Message = "Established connection with server" };
-            var jsonConnection = JsonSerializer.Serialize(data, jsonSerializerOptions);
-            await Response.WriteAsync($"data: {jsonConnection}\n\n", cancellationToken);
+            // Response.Headers.Add("Content-Encoding", "br");
+
+
+            var welcomeEventJson =
+                JsonSerializer.Serialize(new { Message = "Established connection with server" }, jsonSerializerOptions);
+            await Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"data: {welcomeEventJson}\n\n"), cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
 
             async void OnNotification(object? sender, NotificationArgs eventArgs)
             {
                 try
                 {
-                    var json = JsonSerializer.Serialize(eventArgs.Notification[0], jsonSerializerOptions);
-                    await Response.WriteAsync($"planes:{json}\n\n", cancellationToken);
+                    IEnumerable<Plane> planesFiltered;
+                    
+                    if (minLat != 0 && maxLat != 0 && minLong != 0 && maxLong != 0)
+                    {
+                        planesFiltered = eventArgs.Notification
+                                                  .Where(p => p.Latitude > minLat && p.Latitude < maxLat)
+                                                  .Where(p => p.Longitude > minLong && p.Longitude < maxLong);
+                    }
+                    else
+                    {
+                        planesFiltered = eventArgs.Notification;
+                    }
+                    
+                    if (limitPlanes > 0)
+                    {
+                        planesFiltered = planesFiltered.Take(limitPlanes);
+                    }
+
+                    var planesJson =
+                        JsonSerializer.Serialize(new { Planes =  planesFiltered.ToList() }, jsonSerializerOptions);
+                    
+                    // TODO: Compress once in service layer
+                    await Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"data: {planesJson}\n\n"),
+                                                   cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
-                    logger.LogWarning("Sent SSE to {ClientIp}", Request.HttpContext.Connection.RemoteIpAddress?.ToString());
+                    logger.LogWarning("Sent SSE to {ClientIp} on {Time}",
+                                      Request.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                                      DateTime.Now.Millisecond);
                 }
                 catch (Exception)
                 {
@@ -145,8 +146,22 @@ namespace FlightRadar.Controllers
             finally
             {
                 planeBroadcaster.NotificationEvent -= OnNotification;
-                logger.LogWarning("Client disconnected, total connections {CC}", planeBroadcaster.GetSubscribersCount());
+                logger.LogWarning("Client disconnected, total connections {CC}",
+                                  planeBroadcaster.GetSubscribersCount());
             }
         }
+
+        // public static async Task<byte[]> CompressBytes(byte[] bytes)
+        // {
+        //     await using (var outputStream = new MemoryStream())
+        //     {
+        //         await using (var compressStream = new BrotliStream(outputStream, CompressionLevel.Fastest))
+        //         {
+        //             compressStream.Write(bytes, 0, bytes.Length);
+        //         }
+        //
+        //         return outputStream.ToArray();
+        //     }
+        // }
     }
 }

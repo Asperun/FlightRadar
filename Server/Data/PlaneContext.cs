@@ -13,20 +13,20 @@ namespace FlightRadar.Data
 
         public DbSet<Plane> Planes { get; set; } = null!;
 
-        public override int SaveChanges()
-        {
-            var entries = ChangeTracker
-                          .Entries()
-                          .Where(e => e.Entity is EntityBase
-                                      && e.State is EntityState.Added or EntityState.Modified);
-
-            foreach (var entityEntry in entries)
-            {
-                if (entityEntry.State == EntityState.Added) ((EntityBase)entityEntry.Entity).Inserted = DateTime.Now;
-                ((EntityBase)entityEntry.Entity).LastUpdated = DateTime.Now;
-            }
-
-            return base.SaveChanges();
-        }
+        // public override int SaveChanges()
+        // {
+        //     var entries = ChangeTracker
+        //                   .Entries()
+        //                   .Where(e => e.Entity is EntityBase
+        //                               && e.State is EntityState.Added or EntityState.Modified);
+        //
+        //     foreach (var entityEntry in entries)
+        //     {
+        //         if (entityEntry.State == EntityState.Added) ((EntityBase)entityEntry.Entity).Inserted = DateTime.Now;
+        //         ((EntityBase)entityEntry.Entity).LastUpdated = DateTime.Now;
+        //     }
+        //
+        //     return base.SaveChanges();
+        // }
     }
 }
