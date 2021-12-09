@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EFCore.BulkExtensions;
 using FlightRadar.Data;
 using FlightRadar.Models;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +48,13 @@ namespace FlightRadar.Services
                                            .Where(plane => plane.Longitude <= maxLong)
                                            .ToListAsync();
 
+            // var planes = await planeContext.Planes
+            //                                .Select(x =>
+            //                                            new
+            //                                            {
+            //                                                Plane = x.Icao24,
+            //                                                Icao = x.Latitude
+            //                                            }).ToListAsync();
             return planes;
         }
 
@@ -57,12 +66,16 @@ namespace FlightRadar.Services
 
         public void UpdateCurrentPlanes(List<Plane> newPlanes)
         {
-            planeContext.Planes.Clear();
-            planeContext.AddRange(newPlanes);
-            planeContext.SaveChanges();
             planeBroadcaster.BroadcastUpdate(newPlanes);
+            // await planeContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE Planes;");
+            planeContext.Database.ExecuteSqlRaw("DELETE From Planes");
+            // planeContext.Planes.Clear();;
+            planeContext.BulkInsert(newPlanes);
+            // planeContext.Planes.AddRange(newPlanes);
+            planeContext.SaveChanges();
         }
     }
+
 
     public static class EntityExtensions
     {

@@ -39,7 +39,7 @@ namespace FlightRadar.Tasks
         {
             logger.LogInformation("Starting Async @PlanesFetcher");
             timer = new Timer(FetchPlanes, null, TimeSpan.Zero,
-                              TimeSpan.FromSeconds(30));
+                              TimeSpan.FromSeconds(10));
             return Task.CompletedTask;
         }
 
@@ -87,6 +87,7 @@ namespace FlightRadar.Tasks
                 logger.LogWarning("fetched and processed {PlanesAmount} planes in {ElapsedTime}ms",
                                   newPlanesList.Count, stopwatch.ElapsedMilliseconds);
 
+               // await planeService.UpdateCurrentPlanes(newPlanesList);
                 planeService.UpdateCurrentPlanes(newPlanesList);
                 //
                 //
@@ -145,7 +146,7 @@ namespace FlightRadar.Tasks
                     var plane = new Plane
                     {
                         Icao24 = state[States.Icao24].GetString()!,
-                        CallSign = state[States.CallSign].GetString(),
+                        CallSign = state[States.CallSign].GetString()?.TrimEnd(),
                         OriginCountry = state[States.OriginCountry].GetString(),
                         TimePosition = state[States.TimePosition]
                                            .ValueKind != JsonValueKind.Null
@@ -157,32 +158,32 @@ namespace FlightRadar.Tasks
                                           : -1,
                         Longitude = state[States.Longitude]
                                         .ValueKind != JsonValueKind.Null
-                                        ? state[States.Longitude].GetDouble()
+                                        ? state[States.Longitude].GetSingle()
                                         : -1,
                         Latitude = state[States.Latitude].ValueKind != JsonValueKind.Null
-                                       ? state[States.Latitude].GetDouble()
+                                       ? state[States.Latitude].GetSingle()
                                        : -1,
                         BaroAltitude = state[States.BaroAltitude].ValueKind != JsonValueKind.Null
-                                           ? state[States.BaroAltitude].GetDouble()
+                                           ? state[States.BaroAltitude].GetSingle()
                                            : -1,
                         OnGround = state[States.OnGround].GetBoolean(),
                         Velocity = state[States.Velocity].ValueKind != JsonValueKind.Null
-                                       ? state[States.Velocity].GetDouble()
+                                       ? state[States.Velocity].GetSingle()
                                        : -1,
                         TrueTrack = state[States.TrueTrack].ValueKind != JsonValueKind.Null
-                                        ? state[States.TrueTrack].GetDouble()
+                                        ? state[States.TrueTrack].GetSingle()
                                         : -1,
                         VerticalRate = state[States.VerticalRate].ValueKind != JsonValueKind.Null
-                                           ? state[States.VerticalRate].GetDouble()
+                                           ? state[States.VerticalRate].GetSingle()
                                            : -1,
                         GeoAltitude = state[States.GeoAltitude].ValueKind != JsonValueKind.Null
-                                          ? state[States.GeoAltitude].GetDouble()
+                                          ? state[States.GeoAltitude].GetSingle()
                                           : -1,
                         Squawk = state[States.Squawk].GetString(),
                         Spi = state[States.Spi].GetBoolean(),
-                        PositionSource = state[States.PositionSource].ValueKind != JsonValueKind.Null
-                                             ? state[States.PositionSource].GetInt32()
-                                             : -1
+                        PositionSource = (byte?)(state[States.PositionSource].ValueKind != JsonValueKind.Null
+                                                     ? state[States.PositionSource].GetByte()
+                                                     :-1)
                     };
                     planeList.Add(plane);
                 }
@@ -205,8 +206,8 @@ namespace FlightRadar.Tasks
                     OnGround = 8,
                     Velocity = 9,
                     TrueTrack = 10,
-                    Sensors = 11,
-                    VerticalRate = 12,
+                    VerticalRate = 11,
+                    Sensors = 12,
                     GeoAltitude = 13,
                     Squawk = 14,
                     Spi = 15,
