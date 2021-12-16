@@ -1,15 +1,15 @@
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
+  TileLayer,
   useMapEvents,
 } from "react-leaflet";
-import { memo } from "react";
-import { useRef, useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
+import SideBar from "./SideBar";
 
 const MapNoSSR = () => {
   // const [mapData, setMapData] = useState(null);
@@ -55,40 +55,38 @@ const MapNoSSR = () => {
   };
 
   return (
-    <MapContainer
-      center={[51.505, -0.09]}
-      zoom={7}
-      scrollWheelZoom={true}
-      minZoom={3}
-      style={{ height: "100%", width: "100%" }}
-      eventHandlers={dragHandlers}
-      whenCreated={(mapInstance) => {
-        mapRef.current = mapInstance;
-      }}
-    >
-      <TileLayer
-        url={`https://api.mapbox.com/styles/v1/fantasm/ckwwgvv1afty214ocxjqoh1bj/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}`}
-        attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
-      />
-      {/* <TileLayer
-        url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiZmFudGFzbSIsImEiOiJja3d3Z3M0NjYwM2xwMnZsY3BkNWlhejA4In0.LOXrdlU8qMW5KHAPhPSO5A`}
-        attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
-      /> */}
-
-      {/* {planes && renderPlanes()} */}
-      <LocationMarker />
-
-      <Marker
-        ref={markerRef}
-        position={[40.8054, -74.0241]}
-        draggable={true}
+    <div class="">
+      <MapContainer
+        center={[51.505, -0.09]}
+        zoom={7}
+        scrollWheelZoom={true}
+        minZoom={3}
+        style={{ height: "100%", width: "100%" }}
         eventHandlers={dragHandlers}
-        animate={true}
+        whenCreated={(mapInstance) => {
+          mapRef.current = mapInstance;
+        }}
       >
-        {console.log("Rendering marker")}
-        <Popup>Hey ! you found me</Popup>
-      </Marker>
-    </MapContainer>
+        <TileLayer
+          url={`https://api.mapbox.com/styles/v1/fantasm/ckwwgvv1afty214ocxjqoh1bj/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}`}
+          attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
+        />
+        {/* {planes && renderPlanes()} */}
+        <LocationMarker />
+
+        <Marker
+          ref={markerRef}
+          position={[40.8054, -74.0241]}
+          draggable={true}
+          eventHandlers={dragHandlers}
+          animate={true}
+        >
+          {console.log("Rendering marker")}
+          <Popup>Hey ! you found me</Popup>
+        </Marker>
+      </MapContainer>
+      <SideBar />
+    </div>
   );
 
   function LocationMarker() {

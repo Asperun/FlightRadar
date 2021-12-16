@@ -1,6 +1,3 @@
-// import { memo, useEffect } from "react";
-// import MapComponent from "../components/MapComponent";
-
 import dynamic from "next/dynamic";
 
 const MyAwesomeMap = dynamic(() => import("../components/MapNoSSR"), {
@@ -9,7 +6,7 @@ const MyAwesomeMap = dynamic(() => import("../components/MapNoSSR"), {
 
 const Map = () => {
   return (
-    <div className="w-screen h-screen">
+    <div className="w-screen h-screen ">
       <MyAwesomeMap />
     </div>
   );

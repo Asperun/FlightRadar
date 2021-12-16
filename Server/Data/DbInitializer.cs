@@ -1,26 +1,24 @@
-﻿using System;
-using System.Linq;
-using FlightRadar.Models;
+﻿using FlightRadar.Models;
 
-namespace FlightRadar.Data
+namespace FlightRadar.Data;
+
+public static class DbInitializer
 {
-    public static class DbInitializer
+    public static void InitPlanes(PlaneContext context)
     {
-        public static void InitPlanes(PlaneContext context)
+        context.Database.EnsureCreated();
+
+        // Look for any students.
+        if (context.Planes.Any())
         {
-            context.Database.EnsureCreated();
-
-            // Look for any students.
-            if (context.Planes.Any())
-            {
-                Console.WriteLine("Planes already initialized");
-                return;
-            }
-
-            var plane = new Plane { Icao24 = "chuj" };
-            context.Planes.Add(plane);
-            context.SaveChanges();
+            Console.WriteLine("Planes already initialized");
+            return;
         }
+
+        var plane = new Plane { Icao24 = "chuj" };
+        context.Planes.Add(plane);
+        context.SaveChanges();
+    }
 
     //     public static void Initialize(SchoolContext context)
     //     {
@@ -107,5 +105,4 @@ namespace FlightRadar.Data
     //
     //         context.SaveChanges();
     //     }
-    }
 }

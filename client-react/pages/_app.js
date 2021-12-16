@@ -1,4 +1,6 @@
 import "tailwindcss/tailwind.css";
+import "../styles/global.scss";
+
 // import { useEffect } from "react";
 
 function MyApp({ Component, pageProps }) {
