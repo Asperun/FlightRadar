@@ -1,20 +1,15 @@
-﻿using FlightRadar.Models;
+﻿using FlightRadar.Data.DTO;
+using FlightRadar.Models;
 using FlightRadar.Services.Events;
 
 namespace FlightRadar.Services;
 
 public class PlaneBroadcaster
 {
-    // private readonly IServiceScopeFactory services;
-    //
-    // public PlaneBroadcaster(IServiceScopeFactory services)
-    // {
-    //     this.services = services;
-    // }
-
+    public List<Plane> PlaneListSingleton = new(); // for now
     public event EventHandler<NotificationArgs>? NotificationEvent;
 
-    public void BroadcastUpdate(List<Plane> newPlanes)
+    public void BroadcastUpdate(IEnumerable<PlaneListDTO> newPlanes)
     {
         NotificationEvent?.Invoke(this, new NotificationArgs(newPlanes));
     }

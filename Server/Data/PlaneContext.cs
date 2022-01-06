@@ -11,6 +11,13 @@ public class PlaneContext : DbContext
 
     public DbSet<Plane> Planes { get; set; } = null!;
 
+    // protected override void OnModelCreating(ModelBuilder modelBuilder)
+    // {
+    //     base.OnModelCreating(modelBuilder);
+    //     modelBuilder.Entity<Plane>().ToTable("Planes");
+    //
+    // }
+
     // public override int SaveChanges()
     // {
     //     var entries = ChangeTracker

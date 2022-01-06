@@ -1,21 +1,24 @@
 ﻿using EFCore.BulkExtensions;
 using FlightRadar.Data;
+using FlightRadar.Data.DTO;
 using FlightRadar.Models;
+using FlightRadar.Util;
 using Microsoft.EntityFrameworkCore;
 
 namespace FlightRadar.Services;
 
 public class PlaneService
 {
+    private readonly ILogger<PlaneService> logger;
     private readonly PlaneBroadcaster planeBroadcaster;
     private readonly PlaneContext planeContext;
 
-    public PlaneService(PlaneContext planeContext, PlaneBroadcaster planeBroadcaster)
+    public PlaneService(PlaneContext planeContext, PlaneBroadcaster planeBroadcaster, ILogger<PlaneService> logger)
     {
         this.planeContext = planeContext;
         this.planeBroadcaster = planeBroadcaster;
+        this.logger = logger;
     }
-
 
     public async Task<IEnumerable<Plane>?> GetAllAsync()
     {
@@ -24,54 +27,85 @@ public class PlaneService
 
     public async Task<Plane?> GetByIdAsync(int id)
     {
-        var plane = await planeContext.Planes.FindAsync(id);
-
-        return plane;
+        return await planeContext.Planes.FindAsync(id);
     }
 
     public async Task<Plane?> GetByIcao24Async(string icao24)
     {
-        var plane = await planeContext.Planes.FirstAsync(p => p.Icao24.Equals(icao24));
-
-        return plane;
+        return await planeContext.Planes.FirstAsync(p => p.Icao24.Equals(icao24));
     }
 
-    public async Task<IEnumerable<Plane>?> GetInAreaAsync(double minLat, double maxLat,
-                                                          double minLong, double maxLong)
+    private static bool IsInZone(Plane plane, Coordinates coords)
     {
-        var planes = await planeContext.Planes
+        return plane.Longitude > coords.MinLon && plane.Longitude < coords.MaxLon
+                                               && plane.Latitude > coords.MinLat && plane.Latitude < coords.MaxLat;
+    }
+
+    public GlobalStatsDto GetGlobalStatsAsync()
+    {
+        return planeBroadcaster.PlaneListSingleton
+                               // .Where(p => !p.OnGround!.Value)
+                               .GroupBy(p => 1)
+                               .Select(p =>
+                                           new GlobalStatsDto
+                                               (
+                                                p.Count(),
+                                                p.Count(i => !i.OnGround!.Value),
+                                                p.Count(i => IsInZone(i, Globals.CoordinatesUs)),
+                                                p.Count(i => IsInZone(i, Globals.CoordinatesEu))
+                                               ))
+                               .First();
+    }
+
+
+    public async Task<IEnumerable<PlaneListDTO>?> GetInAreaAsync(float minLat, float maxLat,
+                                                                 float minLong, float maxLong,
+                                                                 short maxPlanes)
+    {
+        List<PlaneListDTO> planes;
+        if (planeBroadcaster.PlaneListSingleton.Any())
+            planes = planeBroadcaster.PlaneListSingleton
+                                     .Where(plane => plane.Latitude >= minLat)
+                                     .Where(plane => plane.Latitude <= maxLat)
+                                     .Where(plane => plane.Longitude >= minLong)
+                                     .Where(plane => plane.Longitude <= maxLong)
+                                     .Select(plane =>
+                                                 new PlaneListDTO(plane.Icao24, plane.CallSign, plane.Longitude,
+                                                                  plane.Latitude, plane.TrueTrack))
+                                     .Take(maxPlanes)
+                                     .ToList();
+        else
+            planes = await planeContext.Planes
                                        .AsNoTracking()
-                                       .Where(plane => plane.Latitude >= minLat)
                                        .Where(plane => plane.Latitude <= maxLat)
                                        .Where(plane => plane.Longitude >= minLong)
                                        .Where(plane => plane.Longitude <= maxLong)
+                                       .Where(plane => plane.Latitude >= minLat)
+                                       .Select(plane => new PlaneListDTO(plane.Icao24, plane.CallSign, plane.Longitude,
+                                                                         plane.Latitude, plane.TrueTrack))
+                                       .Take(maxPlanes)
                                        .ToListAsync();
 
-        // var planes = await planeContext.Planes
-        //                                .Select(x =>
-        //                                            new
-        //                                            {
-        //                                                Plane = x.Icao24,
-        //                                                Icao = x.Latitude
-        //                                            }).ToListAsync();
         return planes;
     }
 
-    public async void SaveAllAsync(IEnumerable<Plane> planesModel)
-    {
-        await planeContext.Planes.AddRangeAsync(planesModel);
-        planeContext.SaveChanges();
-    }
 
-    public void UpdateCurrentPlanes(List<Plane> newPlanes)
+    public async Task UpdateCurrentPlanes(IEnumerable<Plane> newPlanes)
     {
-        planeBroadcaster.BroadcastUpdate(newPlanes);
-        // await planeContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE Planes;");
-        planeContext.Database.ExecuteSqlRaw("DELETE From Planes");
-        // planeContext.Planes.Clear();;
-        planeContext.BulkInsert(newPlanes);
-        // planeContext.Planes.AddRange(newPlanes);
-        planeContext.SaveChanges();
+        // 1.) Update in memory DB of current planes
+        // var enumerable = newPlanes.ToList();
+        planeBroadcaster.PlaneListSingleton = newPlanes.ToList();
+
+        // 2.) Broadcast to all subscribers
+        planeBroadcaster.BroadcastUpdate(planeBroadcaster.PlaneListSingleton.Select(plane =>
+                                             new PlaneListDTO(plane.Icao24, plane.CallSign, plane.Longitude,
+                                                              plane.Latitude, plane.TrueTrack)));
+
+        // 3.) Update Main Database
+        await planeContext.BulkInsertOrUpdateAsync(planeBroadcaster.PlaneListSingleton,
+                                                   options => options.UpdateByProperties =
+                                                                  new List<string>(1) { "Icao24" });
+        await planeContext.SaveChangesAsync();
     }
 }
 

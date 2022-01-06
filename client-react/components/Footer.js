@@ -4,8 +4,8 @@ const Footer = () => {
   return (
       <>
         {console.log("Rendering footer")}
-        <div className="absolute bottom-0 text-center w-screen">
-          <footer className="text-gray-700">
+        <div className="absolute bottom-0 text-center w-screen z-50">
+          <footer className="text-white">
             {new Date().getFullYear()} fantasm
           </footer>
         </div>

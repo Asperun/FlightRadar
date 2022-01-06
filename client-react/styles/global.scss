@@ -5,3 +5,30 @@
 .btn {
   @apply bg-black;
 }
+
+.marker {
+  transform: rotate(45deg);
+  @apply text-white;
+  background-image: url("/images/plane.webp");
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.maskBg{
+  z-index: -1;
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.9) 5%, transparent 100%);
+}
+.fade-to-right {
+  //background-image: url('https://hatscripts.github.io/circle-flags/flags/pl.svg');
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1.0) 50%, transparent 100%);
+  //background-image: url(https://hatscripts.github.io/circle-flags/flags/pl.svg),linear-gradient(to right, rgba(1,1,1,1), rgba(1,1,1,0));
+  //background: linear-gradient(to right, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 1)), url(https://hatscripts.github.io/circle-flags/flags/pl.svg) no-repeat;
+  //background-size: contain;
+}

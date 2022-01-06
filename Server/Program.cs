@@ -1,8 +1,12 @@
 using System.IO.Compression;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using FlightRadar.Data;
+using FlightRadar.Data.DTO;
 using FlightRadar.Services;
 using FlightRadar.Tasks;
+using FlightRadar.Util;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -44,11 +48,11 @@ builder.Services.AddResponseCompression(options =>
     options.EnableForHttps = true;
     // options.Providers.Add<GzipCompressionProvider>();
     options.Providers.Add<BrotliCompressionProvider>();
-    options.MimeTypes = new[] { "text/plain", "text/event-stream" };
+    options.MimeTypes = new[] { "text/plain", "text/event-stream", "application/json" };
 });
 
 builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
-
+;
 // ------------------------------------------------------------
 var app = builder.Build();
 
@@ -74,8 +78,8 @@ app.UseEndpoints(endpoint => endpoint.MapControllers());
 
 
 // DB context
-// var planeCtx = app.Services.CreateScope().ServiceProvider.GetRequiredService<PlaneContext>();
-
+var planeCtx = app.Services.CreateScope().ServiceProvider.GetRequiredService<PlaneContext>();
+planeCtx.Database.EnsureCreated();
 // DB initialize
 // DbInitializer.InitPlanes(planeCtx);
 

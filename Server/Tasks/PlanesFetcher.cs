@@ -7,6 +7,7 @@ namespace FlightRadar.Tasks;
 
 public class PlanesFetcher : IHostedService, IDisposable
 {
+    private const int interval = 10;
     private readonly IConfiguration configuration;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ILogger<PlanesFetcher> logger;
@@ -33,7 +34,7 @@ public class PlanesFetcher : IHostedService, IDisposable
     {
         logger.LogInformation("Starting Async @PlanesFetcher");
         timer = new Timer(FetchPlanes, null, TimeSpan.Zero,
-                          TimeSpan.FromSeconds(10));
+                          TimeSpan.FromSeconds(interval));
         return Task.CompletedTask;
     }
 
@@ -82,7 +83,7 @@ public class PlanesFetcher : IHostedService, IDisposable
                               newPlanesList.Count, stopwatch.ElapsedMilliseconds);
 
             // await planeService.UpdateCurrentPlanes(newPlanesList);
-            planeService.UpdateCurrentPlanes(newPlanesList);
+            await planeService.UpdateCurrentPlanes(newPlanesList);
             //
             //
             // // Debug
@@ -119,13 +120,6 @@ public class PlanesFetcher : IHostedService, IDisposable
         }
     }
 
-    // private void UpdateInNewContext(IEnumerable<Plane> newPlanes)
-    // {
-    //     using var scope = services.CreateScope();
-    //     var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
-    //     planeService.UpdateAll(newPlanes);
-    //     // planeService.SaveAllAsync(newPlanes);
-    // }
 
     private sealed class SkyApiResponse
     {
