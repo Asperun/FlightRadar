@@ -41,7 +41,7 @@ function MapNoSSR() {
         const bounds = mapRef.current?.getBounds();
         if (!bounds) return;
 
-        eventSource.current = new EventSource(`http://20.52.124.1:5001/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
+        eventSource.current = new EventSource(`https://fantasea.pl/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
         // eventSource.current = new EventSource(`http://192.168.0.13:5001/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
         eventSource.current.onmessage = processData;
     }

@@ -5,7 +5,7 @@ export const fetcher = ( ...args ) => fetch(...args).then(res =>  res.json());
 
 
 export function usePlaneImage (icao24) {
-  const { data, error } = useSWRImmutable(`https:/api.planespotters.net/pub/photos/hex/${icao24}`,fetcher)
+  const { data, error } = useSWRImmutable(`https://api.planespotters.net/pub/photos/hex/${icao24}`,fetcher)
 
   return {
     data: data,
@@ -25,7 +25,7 @@ export function useSkyPlaneDetails (icao24) {
 }
 
 export function useApiPlaneDetails (icao24) {
-  const { data, error } = useSWR(icao24 ?`http://20.52.124.1:5001/api/v1/planes/icao24/${icao24}?checkpoints=true`:null, fetcher, {refreshInterval: 12_000})
+  const { data, error } = useSWR(icao24 ?`https://fantasea.pl/api/v1/planes/icao24/${icao24}?checkpoints=true`:null, fetcher, {refreshInterval: 12_000})
 
   return {
     data: data,
@@ -36,7 +36,7 @@ export function useApiPlaneDetails (icao24) {
 
 export function useSidePanelStats () {
   // const { data, error } = useSWR(`http://192.168.0.13:5001/api/v1/planes/stats/global`, fetcher)
-  const { data, error } = useSWR(`http://20.52.124.1:5001/api/v1/planes/stats/global`, fetcher)
+  const { data, error } = useSWR(`https://fantasea.pl/api/v1/planes/stats/global`, fetcher)
 
   return {
     data: data,

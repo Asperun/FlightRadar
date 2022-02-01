@@ -258,8 +258,8 @@ const Stats = ( {hourlyStats, regionStats} ) => {
 
 
 export async function getStaticProps() {
-  const hourlyStatsJson = await fetch('http://20.52.124.1:5001/api/v1/planes/stats/hourly').then(res => res.json());
-  const regionStatsJson = await fetch('http://20.52.124.1:5001/api/v1/planes/stats/planesregistered').then(res => res.json());
+  const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly').then(res => res.json());
+  const regionStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json());
 
   const hourlyStats =
             [{
