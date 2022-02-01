@@ -1,14 +1,29 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using FlightRadar.Data;
 using FlightRadar.Data.DTO;
 using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Services.Events;
 using FlightRadar.Util;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using static FlightRadar.Data.DTO.ResponseDto;
 
 namespace FlightRadar.Controllers;
 
+public enum StatsType
+{
+    MainPage,
+    Hourly,
+    Global,
+    PlanesRegistered
+}
+
+/// <summary>
+/// REST controller class for aircraft related requests
+/// </summary>
 [Route("api/v1/planes")]
 [ApiController]
 public class PlaneController : ControllerBase
@@ -18,8 +33,8 @@ public class PlaneController : ControllerBase
     private readonly PlaneBroadcaster planeBroadcaster;
     private readonly PlaneService planeService;
 
-
-    public PlaneController(PlaneService planeService, ILogger<PlaneController> logger,
+    public PlaneController(PlaneService planeService,
+                           ILogger<PlaneController> logger,
                            PlaneBroadcaster planeBroadcaster)
     {
         this.planeService = planeService;
@@ -27,111 +42,108 @@ public class PlaneController : ControllerBase
         this.planeBroadcaster = planeBroadcaster;
         jsonSerializerOptions = new JsonSerializerOptions
         {
-            // Converters = { new JsonArraySerializer() },
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
     }
 
-    [HttpGet("all")]
-    public async Task<ActionResult<IEnumerable<Plane>>> GetAllPlanes()
-    {
-        Console.WriteLine("Empty response?");
-        var planes = await planeService.GetAllAsync();
-        if (planes == null || !planes.Any()) return NotFound();
-        return Ok(planes);
-    }
-
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<Plane>> GetById(int id)
-    {
-        Console.WriteLine("GetById");
-        var plane = await planeService.GetByIdAsync(id);
-        if (plane == null) return NotFound();
-        return plane;
-    }
-
+    /// <summary>
+    /// Gets aircraft by Icao24 string from database
+    /// </summary>
+    /// <param name="icao24">Hex representation of aircraft identity</param>
+    /// <param name="checkpoints">Include checkpoints of recent flight(s)</param>
+    /// <returns>Aircraft with specified Icao</returns>
     [HttpGet("icao24/{icao24}")]
-    public async Task<ActionResult<Plane>> GetByIcao24(string icao24)
+    public async Task<ActionResult<Plane>> GetByIcao24(string? icao24, bool checkpoints = false)
     {
-        // Response.Headers.Add("Content-Type", "application/json");
-        // Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
-        Console.WriteLine("GetById");
-        var plane = await planeService.GetByIcao24Async(icao24);
+        if (icao24 == null) return BadRequest();
+        Console.WriteLine("GetByIcao24");
+        var plane = await planeService.GetByIcao24Async(icao24, checkpoints);
         if (plane == null) return NotFound();
         return Ok(plane);
     }
 
-    [HttpGet("stats")]
-    public async Task<ActionResult<Plane>> GetGlobalStats()
+
+    /// <summary>
+    /// Gets statistics from database used by map side panel
+    /// </summary>
+    /// <returns>Stats in DTO</returns>
+    [HttpGet("stats/{statsType}")]
+    public async Task<ActionResult<SidePanelStatsDto>> GetSidePanelStats([FromRoute] StatsType statsType)
     {
-        // Response.Headers.Add("Content-Type", "application/json");
-        // Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
-        Console.WriteLine("GlobalStats");
-        var stats = planeService.GetGlobalStatsAsync();
-        Console.WriteLine(stats);
-        if (stats == null) return NotFound();
-        return Ok(stats);
+        switch (statsType)
+        {
+            case StatsType.Global:
+                var stats = planeService.GetGlobalStatsAsync();
+                if (stats.TotalPlanes == 0) return NoContent();
+                return Ok(stats);
+            case StatsType.Hourly:
+                return Ok(await planeService.GetHourlyAmountFromDate(DateTime.UtcNow));
+            case StatsType.PlanesRegistered:
+                return Ok(await planeService.GetRegisteredPerCountry());
+            case StatsType.MainPage:
+                return Ok(await planeService.GetMainPageProjection());
+            default:
+                return BadRequest();
+        }
     }
 
-    [HttpGet("findInArea")]
-    public async Task<IEnumerable<PlaneListDTO>> FindInArea([FromQuery] float minLat,
-                                                            [FromQuery] float maxLat,
-                                                            [FromQuery] float minLong,
-                                                            [FromQuery] float maxLong,
-                                                            [FromQuery] short limitPlanes)
-    {
-        var planes = await planeService.GetInAreaAsync(minLat, maxLat, minLong, maxLong, limitPlanes);
-
-        return planes;
-    }
-
+    /// <summary>
+    /// Handles sending Server Sent Events to all subscribers
+    /// </summary>
+    /// <param name="minLat">Minimal latitude boundary</param>
+    /// <param name="maxLat">Maximal latitude boundary</param>
+    /// <param name="minLong">Minimal longitude boundary</param>
+    /// <param name="maxLong">Maximal longitude boundary</param>
+    /// <param name="limitPlanes">Amount limit</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     [Produces("text/event-stream")]
     [HttpGet("subscribeToPlanes")]
-    public async Task SubscribeToAllPlaneSse([FromQuery] float minLat,
-                                             [FromQuery] float maxLat,
-                                             [FromQuery] float minLong,
-                                             [FromQuery] float maxLong,
-                                             [FromQuery] short limitPlanes,
-                                             CancellationToken cancellationToken)
+    public async Task Subscribe([FromQuery] float minLat, [FromQuery] float minLong,
+                                [FromQuery] float maxLat, [FromQuery] float maxLong,
+                                [FromQuery] short limitPlanes, CancellationToken cancellationToken)
     {
         // Headers
         Response.Headers.Add("Content-Type", "text/event-stream");
         Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
+        // Response.Headers.Add("Cache-Control", "no-cache");
         // Response.Headers.Add("Transer-Encoding", "chunked");
 
 
-        // Initial planes response from memory DB
+        // Gets planes based on passed coordinates
         var initialPlanesJson =
-            JsonSerializer.Serialize(new { Planes = await planeService.GetInAreaAsync(minLat, maxLat, minLong, maxLong, limitPlanes) },
-                                     jsonSerializerOptions);
+            JsonSerializer
+                .Serialize(new { Planes = planeService.GetInAreaAsync(minLat, minLong, maxLat, maxLong, limitPlanes) },
+                           jsonSerializerOptions);
+
+
+        // Send it
         await Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"data: {initialPlanesJson}\n\n"), cancellationToken);
         await Response.Body.FlushAsync(cancellationToken);
 
-        // Delegate
+        // Delegate and subscribe
         async void OnNotification(object? sender, NotificationArgs eventArgs)
         {
             try
             {
-                IEnumerable<PlaneListDTO> planesFiltered;
+                IEnumerable<PlaneListDto> planesFiltered;
 
                 if (minLat != 0 && maxLat != 0 && minLong != 0 && maxLong != 0)
+                {
                     planesFiltered = eventArgs.Planes
                                               .Where(p => p.Latitude > minLat && p.Latitude < maxLat)
                                               .Where(p => p.Longitude > minLong && p.Longitude < maxLong);
+                }
                 else
+                {
                     planesFiltered = eventArgs.Planes;
+                }
 
                 if (limitPlanes > 0) planesFiltered = planesFiltered.Take(limitPlanes);
 
-                // var planesJson =
-                //     JsonSerializer.Serialize(new { Planes = planesFiltered, Total = eventArgs.Planes.Count() },
-                //                              jsonSerializerOptions);
-  var planesJson =
+                var planesJson =
                     JsonSerializer.Serialize(new { Planes = planesFiltered, Total = eventArgs.Planes.Count() },
                                              jsonSerializerOptions);
 
-                // TODO: Hold a list of current planes in runtime
                 await Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"data: {planesJson}\n\n"), cancellationToken);
                 await Response.Body.FlushAsync(cancellationToken);
                 logger.LogWarning("Sent SSE to {ClientIp} on {Time} planes amount {PlanesAmount}",
@@ -152,33 +164,18 @@ public class PlaneController : ControllerBase
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                // Check if connection is broken 
                 await Task.Delay(1000 * 1, cancellationToken);
             }
         }
         catch (TaskCanceledException)
         {
             logger.LogWarning("User disconnected");
-            // logger.LogWarning("Client disconnected, total connections {CC}", planeBroadcaster.GetSubscribersCount());
         }
-        finally
+        finally // Unsubscribe
         {
             planeBroadcaster.NotificationEvent -= OnNotification;
             logger.LogWarning("Client disconnected, total connections {CC}",
                               planeBroadcaster.GetSubscribersCount());
         }
     }
-
-    // public static async Task<byte[]> CompressBytes(byte[] bytes)
-    // {
-    //     await using (var outputStream = new MemoryStream())
-    //     {
-    //         await using (var compressStream = new BrotliStream(outputStream, CompressionLevel.Fastest))
-    //         {
-    //             compressStream.Write(bytes, 0, bytes.Length);
-    //         }
-    //
-    //         return outputStream.ToArray();
-    //     }
-    // }
 }

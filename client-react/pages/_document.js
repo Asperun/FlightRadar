@@ -15,7 +15,7 @@ class MyDocument extends Document {
                 rel="stylesheet"
             />
           </Head>
-          <body className="font-lato">
+          <body className="font-lato darkTheme">
           <Main />
           <NextScript />
           </body>

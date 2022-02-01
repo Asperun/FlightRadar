@@ -1,13 +1,12 @@
-import NavBar from "./NavBar";
-import Footer from "./Footer";
 import { memo } from "react";
 
 const Layout = ( {children} ) => {
-  return (<div className="w-screen h-screen flex flex-col">
-    <NavBar />
-    <main className="h-full w-full">{children}</main>
-    <Footer />
-  </div>);
+  return (
+      <div className="w-screen h-screen flex flex-col grow-0 overflow-x-hidden">
+        {/*<NavBar />*/}
+        <main className={"w-full h-full"}>{children}</main>
+        {/*<Footer />*/}
+      </div>);
 };
 
 export default memo(Layout);

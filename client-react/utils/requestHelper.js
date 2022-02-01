@@ -1,64 +1,47 @@
 import useSWR from 'swr'
+import useSWRImmutable from "swr/immutable";
 
-export const fetcher = ( ...args ) => fetch(...args).then(res => {
-  // console.log(args);
-  return res.json()
-});
+export const fetcher = ( ...args ) => fetch(...args).then(res =>  res.json());
 
-// export function usePlaneDetails( icao24 ) {
-//   const {data, error} = useSWR(`https://localhost:5001/api/v1/planes/icao24/${icao24}`, fetcher)
-//   return {
-//     plane: data, isLoading: !error && !data, isError: error
-//   }
-// }
-export function usePlaneDetails( icao24 ) {
-  const {data, error} = useSWR([`https://stormy-lake-51427.herokuapp.com/https://opensky-network.org/api/metadata/aircraft/icao/${icao24}`,{
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-    }
-  }], fetcher , {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+
+export function usePlaneImage (icao24) {
+  const { data, error } = useSWRImmutable(`https:/api.planespotters.net/pub/photos/hex/${icao24}`,fetcher)
+
   return {
-    planeInfo: data, isLoading: !error && !data, isError: error
+    data: data,
+    isLoading: !error && !data,
+    isError: error
   }
 }
 
-export function usePlaneRoutes( callSign ) {
-  const {data, error} = useSWR([`https://stormy-lake-51427.herokuapp.com/https://opensky-network.org/api/routes?callsign=${callSign}`,{
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-    }
-  }], fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false
-  })
-  return { //{"callsign":"VKG819","route":["GVAC","EFHK","ESGG"],"updateTime":1640647465000,"operatorIata":"DK","flightNumber":819}
-    planeRoutes: data, isLoading: !error && !data, isError: error
-  }
-}
+export function useSkyPlaneDetails (icao24) {
+  const { data, error } = useSWRImmutable(`https://stormy-lake-51427.herokuapp.com/https://opensky-network.org/api/metadata/aircraft/icao/${icao24}`,fetcher)
 
-export function usePlaneRouteDetails( icao24, time ) {
-  const {data, error} = useSWR( ()=>`https://opensky-network.org/api/flights/aircraft?icao24=${icao24}&begin=1640041179&end=${time - 612000}&limit=1&offset=0`, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false
-  })
   return {
-    planeRoutes: data, isLoading: !error && !data, isError: error
+    data: data,
+    isLoading: !error && !data,
+    isError: error
   }
 }
 
-export function useGlobalStats() {
-  const {data, error} = useSWR(`https://localhost:5001/api/v1/planes/globals`, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false
-  })
+export function useApiPlaneDetails (icao24) {
+  const { data, error } = useSWR(icao24 ?`http://20.52.124.1:5001/api/v1/planes/icao24/${icao24}?checkpoints=true`:null, fetcher, {refreshInterval: 12_000})
+
   return {
-    stats: data, isLoading: !error && !data, isError: error
+    data: data,
+    isLoading: !error && !data,
+    isError: error
   }
 }
+
+export function useSidePanelStats () {
+  // const { data, error } = useSWR(`http://192.168.0.13:5001/api/v1/planes/stats/global`, fetcher)
+  const { data, error } = useSWR(`http://20.52.124.1:5001/api/v1/planes/stats/global`, fetcher)
+
+  return {
+    data: data,
+    isLoading: !error && !data,
+    isError: error
+  }
+}
+

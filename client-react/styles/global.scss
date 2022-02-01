@@ -2,29 +2,50 @@
 @import "~tailwindcss/components";
 @import "~tailwindcss/utilities";
 
-.btn {
-  @apply bg-black;
-}
-
-.marker {
-  transform: rotate(45deg);
-  @apply text-white;
-  background-image: url("/images/plane.webp");
-}
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-.maskBg{
+.darkTheme {
+  background: #121212;
+  color: #FFFFFF;
+  opacity: 87%;
+}
+
+.text-color-primary {
+  color: #FFFFFF;
+  opacity: 87%;
+}
+
+.bg-purple-light {
+  background: #BB86FC;
+}
+
+.text-highlighted {
+  text-shadow: 0 0 6px #fff,
+  0 0 2px #0fa
+}
+
+.dark-background {
+  background: #121212;
+}
+
+.dark-surface {
+  background: #1e1e1e;
+}
+
+.maskBg {
   z-index: -1;
   mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.9) 5%, transparent 100%);
 }
+
 .fade-to-right {
   //background-image: url('https://hatscripts.github.io/circle-flags/flags/pl.svg');
   mask-image: linear-gradient(to right, rgba(0, 0, 0, 1.0) 50%, transparent 100%);

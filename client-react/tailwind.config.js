@@ -10,12 +10,15 @@ module.exports = {
             "linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,1.0)),url('/images/clouds2.jpg')",
         jet: "linear-gradient(to bottom, rgba(255,255,255,0.0), rgba(255,255,255,0.4)),url('/images/jet.jpg')",
         planeOrange: "url('/images/plane-orange.webp')",
-        flagTest: "linear-gradient(to bottom, rgba(255,255,255,0.0), rgba(255,255,255,0.4)),url('https://hatscripts.github.io/circle-flags/flags/pl.svg')"
+        flagTest: "linear-gradient(to bottom, rgba(255,255,255,0.0), rgba(255,255,255,0.4)),url('https://hatscripts.github.io/circle-flags/flags/pl.svg')",
       },
       fontFamily: {
         oxygen: ["Oxygen"],
         lato: ["Lato"],
       },
+      colors: {
+        "dark1": "#0E1317"
+      }
     },
   },
   plugins: [],

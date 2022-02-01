@@ -1,13 +1,15 @@
-﻿namespace FlightRadar.Models;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
+namespace FlightRadar.Models;
+
+/// <summary>
+/// Base entity class
+/// </summary>
 public abstract class EntityBase
 {
-    // [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Key]
+    [JsonIgnore]
     public int Id { get; set; }
-
-    // [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public DateTime? Inserted { get; set; }
-
-    // [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    public DateTime? LastUpdated { get; set; }
 }

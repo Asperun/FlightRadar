@@ -1,15 +1,16 @@
-﻿using FlightRadar.Data.DTO;
+﻿using static FlightRadar.Data.DTO.ResponseDto;
 
 namespace FlightRadar.Services.Events;
 
+/// <summary>
+/// Delegate arguments used for subscriber-publisher data transfer
+/// </summary>
 public class NotificationArgs : EventArgs
 {
-    public NotificationArgs(IEnumerable<PlaneListDTO> planes)
+    public NotificationArgs(IEnumerable<PlaneListDto> planes)
     {
         Planes = planes;
     }
 
-    public IEnumerable<PlaneListDTO> Planes { get; }
-
-    // public record CoordinatesRange(float MinLong, float MaxLong, float MinLat, float MaxLat);
+    public IEnumerable<PlaneListDto> Planes { get; }
 }

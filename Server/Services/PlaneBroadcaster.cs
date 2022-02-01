@@ -1,19 +1,30 @@
-﻿using FlightRadar.Data.DTO;
-using FlightRadar.Models;
+﻿using FlightRadar.Models;
 using FlightRadar.Services.Events;
+using static FlightRadar.Data.DTO.ResponseDto;
 
 namespace FlightRadar.Services;
 
+/// <summary>
+/// Aircraft publisher class for Server Sent Events
+/// </summary>
 public class PlaneBroadcaster
 {
-    public List<Plane> PlaneListSingleton = new(); // for now
     public event EventHandler<NotificationArgs>? NotificationEvent;
-
-    public void BroadcastUpdate(IEnumerable<PlaneListDTO> newPlanes)
+    
+    /// <summary>
+    /// Updates memory list of aircraft and publishes it to subscribers
+    /// </summary>
+    /// <param name="planes">List of aircraft</param>
+    public void UpdateAndPublish(IEnumerable<Plane> planes)
     {
-        NotificationEvent?.Invoke(this, new NotificationArgs(newPlanes));
+        NotificationEvent?.Invoke(this, new NotificationArgs(planes.Select(plane =>
+                                                                                  new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))));
     }
 
+    /// <summary>
+    /// Gets current subscribers count
+    /// </summary>
+    /// <returns>Amount of subscribers</returns>
     public int GetSubscribersCount()
     {
         return NotificationEvent != null ? NotificationEvent.GetInvocationList().Length : 0;
