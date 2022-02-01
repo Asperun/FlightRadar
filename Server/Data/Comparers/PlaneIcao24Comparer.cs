@@ -3,7 +3,7 @@
 namespace FlightRadar.Data.Comparers;
 
 /// <summary>
-/// Comparator class used to compare aircraft by Icao24 string
+///     Comparator class used to compare aircraft by Icao24 string
 /// </summary>
 public sealed class PlaneIcao24Comparer : IComparer<Plane>
 {

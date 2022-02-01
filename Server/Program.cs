@@ -2,24 +2,16 @@ using System.IO.Compression;
 using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FlightRadar.Data;
-using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Tasks;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-
-/*  #####################################################
-    ######################## SERVICES ##################
-    #################################################### */
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -30,7 +22,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddHttpClient<PlanesFetcher>("OpenSky");
 builder.Services.AddDbContext<PlaneContext>(x => x.UseSqlServer(connectionString));
 builder.Services.AddScoped<PlaneService>();
-builder.Services.AddSingleton<PlaneBroadcaster>(); 
+builder.Services.AddSingleton<PlaneBroadcaster>();
 
 // ====== Swagger ======
 builder.Services.AddEndpointsApiExplorer();
@@ -60,15 +52,8 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
 
-/*  #####################################################
-    ####################### APP BUILDER ################
-    #################################################### */
 
 var app = builder.Build();
-
-// ====== CORS ======
-
-
 
 // ====== HTTP request pipeline ======
 if (app.Environment.IsDevelopment())
@@ -85,10 +70,6 @@ app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().Build());
 app.UseAuthorization();
 app.UseEndpoints(endpoint => endpoint.MapControllers());
 
-
-/*  #####################################################
-    ######################## DATABASE ##################
-    #################################################### */
 
 // ====== Migrations ======
 var planeCtx = app.Services.CreateScope().ServiceProvider.GetRequiredService<PlaneContext>();

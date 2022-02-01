@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.HttpLogging;
-
-namespace FlightRadar.Util;
+﻿namespace FlightRadar.Util;
 
 /// <summary>
-/// Global variable class
+///     Global variable class
 /// </summary>
 public abstract class Globals
 {
@@ -12,7 +10,7 @@ public abstract class Globals
 }
 
 /// <summary>
-/// Coordinates wrapper
+///     Coordinates wrapper
 /// </summary>
 /// <param name="MinLon">Minimal longitude</param>
 /// <param name="MinLat">Minimal latitude</param>

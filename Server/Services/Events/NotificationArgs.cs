@@ -3,7 +3,7 @@
 namespace FlightRadar.Services.Events;
 
 /// <summary>
-/// Delegate arguments used for subscriber-publisher data transfer
+///     Delegate arguments used for subscriber-publisher data transfer
 /// </summary>
 public class NotificationArgs : EventArgs
 {
