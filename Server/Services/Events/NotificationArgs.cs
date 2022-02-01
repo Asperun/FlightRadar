@@ -1,39 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Drawing;
-using System.Linq;
-using System.Numerics;
-using Plane = FlightRadar.Models.Plane;
+﻿using static FlightRadar.Data.DTO.ResponseDto;
 
-namespace FlightRadar.Services.Events
+namespace FlightRadar.Services.Events;
+
+/// <summary>
+/// Delegate arguments used for subscriber-publisher data transfer
+/// </summary>
+public class NotificationArgs : EventArgs
 {
-    public class NotificationArgs : EventArgs
+    public NotificationArgs(IEnumerable<PlaneListDto> planes)
     {
-        // public NotificationArgs(List<Plane> notification, CoordinatesRange? coordinates = null)
-        // {
-        //     if (coordinates != null)
-        //     {
-        //         Notification = notification
-        //                        .Where(p => p.Longitude > coordinates.MinLong)
-        //                        .Where(p => p.Longitude < coordinates.MaxLong)
-        //                        .Where(p => p.Latitude > coordinates.MinLat)
-        //                        .Where(p => p.Latitude < coordinates.MaxLat)
-        //                        .ToList();
-        //     }
-        //     else
-        //     {
-        //         Notification = notification;
-        //     }
-        // }
-
-        public NotificationArgs(List<Plane> notification)
-        {
-            Notification = notification;
-        }
-
-        public List<Plane> Notification { get; }
-
-        // public record CoordinatesRange(float MinLong, float MaxLong, float MinLat, float MaxLat);
+        Planes = planes;
     }
+
+    public IEnumerable<PlaneListDto> Planes { get; }
 }

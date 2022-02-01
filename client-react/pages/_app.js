@@ -1,13 +1,15 @@
 import "tailwindcss/tailwind.css";
-// import { useEffect } from "react";
+import "../styles/global.scss";
+import Layout from "../components/Layout";
 
-function MyApp({ Component, pageProps }) {
-  // useEffect(() => {
-  //   console.log("Use effect Main page");
-  //   document.getElementById("__next").className =
-  //     "h-screen w-screen bg-gray-900 text-white";
-  // }, []);
-  return <Component {...pageProps} />;
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+
+function MyApp( {Component, pageProps} ) {
+  return (
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
+  );
 }
 
 export default MyApp;

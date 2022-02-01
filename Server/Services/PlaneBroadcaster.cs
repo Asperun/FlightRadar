@@ -1,27 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using FlightRadar.Models;
+﻿using FlightRadar.Models;
 using FlightRadar.Services.Events;
+using static FlightRadar.Data.DTO.ResponseDto;
 
-namespace FlightRadar.Services
+namespace FlightRadar.Services;
+
+/// <summary>
+/// Aircraft publisher class for Server Sent Events
+/// </summary>
+public class PlaneBroadcaster
 {
-    public class PlaneBroadcaster
+    public event EventHandler<NotificationArgs>? NotificationEvent;
+    
+    /// <summary>
+    /// Updates memory list of aircraft and publishes it to subscribers
+    /// </summary>
+    /// <param name="planes">List of aircraft</param>
+    public void UpdateAndPublish(IEnumerable<Plane> planes)
     {
-        // private readonly IServiceScopeFactory services;
-        //
-        // public PlaneBroadcaster(IServiceScopeFactory services)
-        // {
-        //     this.services = services;
-        // }
+        NotificationEvent?.Invoke(this, new NotificationArgs(planes.Select(plane =>
+                                                                                  new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))));
+    }
 
-        public event EventHandler<NotificationArgs>? NotificationEvent;
-
-        public void BroadcastUpdate(List<Plane> newPlanes)
-        {
-            NotificationEvent?.Invoke(this, new NotificationArgs(newPlanes));
-        }
-
-        public int GetSubscribersCount() => NotificationEvent != null ? NotificationEvent.GetInvocationList().Length : 0;
+    /// <summary>
+    /// Gets current subscribers count
+    /// </summary>
+    /// <returns>Amount of subscribers</returns>
+    public int GetSubscribersCount()
+    {
+        return NotificationEvent != null ? NotificationEvent.GetInvocationList().Length : 0;
     }
 }

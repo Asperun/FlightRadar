@@ -1,232 +1,108 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http;
+﻿using System.Diagnostics;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+using FlightRadar.Data.Comparers;
+using FlightRadar.Data.Requests;
 using FlightRadar.Models;
 using FlightRadar.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
-namespace FlightRadar.Tasks
+namespace FlightRadar.Tasks;
+
+/// <summary>
+/// OpenSky Api data fetching and processing class
+/// </summary>
+public class PlanesFetcher : IHostedService, IDisposable
 {
-    public class PlanesFetcher : IHostedService, IDisposable
+    private readonly IConfiguration configuration;
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly ILogger<PlanesFetcher> logger;
+    private readonly IServiceScopeFactory services;
+
+    private Timer task1 = null!;
+    private Timer task2 = null!;
+
+    private delegate Task FetchCallback(List<Plane> planes);
+
+    public PlanesFetcher(ILogger<PlanesFetcher> logger, IServiceScopeFactory services,
+                         IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
-        private readonly IConfiguration configuration;
-        private readonly IHttpClientFactory httpClientFactory;
-        private readonly ILogger<PlanesFetcher> logger;
-        private readonly IServiceScopeFactory services;
+        this.logger = logger;
+        this.services = services;
+        this.configuration = configuration;
+        this.httpClientFactory = httpClientFactory;
+    }
 
-        private Timer timer = null!;
+    public void Dispose()
+    {
+        task1?.Dispose();
+        task2?.Dispose();
+    }
+    
+    private async Task Callback_UpdatePlanes(List<Plane> planes)
+    {
+        logger.LogWarning("Updating Planes");
+        using var scope = services.CreateScope();
+        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
+        await planeService.UpdatePlanes(planes);
+        logger.LogWarning("Updated Planes");
+    }
 
+    private async Task Callback_UpdateCheckpoints(List<Plane> planes)
+    {
+        logger.LogWarning("Updating Checkpoints");
+        using var scope = services.CreateScope();
+        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
+        await planeService.UpdateCheckpoints(planes);
+        logger.LogWarning("Updated Checkpoints");
+    }
 
-        public PlanesFetcher(ILogger<PlanesFetcher> logger, IServiceScopeFactory services,
-                             IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        task1 = new Timer(state => FetchPlanes(state, Callback_UpdatePlanes), null, TimeSpan.Zero
+                        , TimeSpan.FromSeconds(int.Parse(configuration["Intervals:FetchInterval"])));
+        task2 = new Timer(state => FetchPlanes(state, Callback_UpdateCheckpoints), null, TimeSpan.Zero
+                        , TimeSpan.FromSeconds(int.Parse(configuration["Intervals:CheckpointsInterval"])));
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken stoppingToken)
+    {
+        task1?.Change(Timeout.Infinite, 0);
+        task2?.Change(Timeout.Infinite, 0);
+        return Task.CompletedTask;
+    }
+
+    private async void FetchPlanes(object? state, FetchCallback callback)
+    {
+        using var httpResponseMessage = await SendFetchRequest();
+        if (!httpResponseMessage.IsSuccessStatusCode)
         {
-            this.logger = logger;
-            this.services = services;
-            this.configuration = configuration;
-            this.httpClientFactory = httpClientFactory;
+            logger.LogWarning("Fetch failed - OpenSkyApi bad response");
+            return;
         }
 
-        public void Dispose() => timer?.Dispose();
+        await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
+
+        if (response == null)
         {
-            logger.LogInformation("Starting Async @PlanesFetcher");
-            timer = new Timer(FetchPlanes, null, TimeSpan.Zero,
-                              TimeSpan.FromSeconds(10));
-            return Task.CompletedTask;
+            logger.LogWarning("Fetch failed - Response was null");
+            return;
         }
+        var recentPlanes = response.ToModelList();
+        
+        await callback(recentPlanes);
+    }
 
-        public Task StopAsync(CancellationToken stoppingToken)
-        {
-            logger.LogInformation("BackgroundTask is stopping");
+    private async Task<HttpResponseMessage> SendFetchRequest()
+    {
+        var connectionString = string.Format("https://{0}:{1}@opensky-network.org/api/states/all",
+                                             configuration["OpenSkyApi:UserName"],
+                                             configuration["OpenSkyApi:Password"]);
 
-            timer?.Change(Timeout.Infinite, 0);
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, connectionString);
+        var httpClient = httpClientFactory.CreateClient("OpenSky");
 
-            return Task.CompletedTask;
-        }
-
-
-        private async void FetchPlanes(object? state)
-        {
-            var stopwatch = new Stopwatch();
-
-            using var scope = services.CreateScope();
-            var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
-
-            // Request
-            var connectionString = string.Format("https://{0}:{1}@opensky-network.org/api/states/all",
-                                                 configuration["OpenSkyApi:UserName"],
-                                                 configuration["OpenSkyApi:Password"]);
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, connectionString);
-            var httpClient = httpClientFactory.CreateClient("OpenSky");
-
-            // Send and response
-            using (var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage))
-            {
-                if (!httpResponseMessage.IsSuccessStatusCode) return;
-                await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
-
-                // Receive response
-                var response = await JsonSerializer.DeserializeAsync<SkyApiResponse>(contentStream);
-
-                if (response == null) return;
-
-                // Convert response to model
-                stopwatch.Start();
-                var newPlanesList = response.ConvertToModel(true);
-                stopwatch.Stop();
-
-                logger.LogWarning("fetched and processed {PlanesAmount} planes in {ElapsedTime}ms",
-                                  newPlanesList.Count, stopwatch.ElapsedMilliseconds);
-
-               // await planeService.UpdateCurrentPlanes(newPlanesList);
-                planeService.UpdateCurrentPlanes(newPlanesList);
-                //
-                //
-                // // Debug
-                // var matchesFound = 0;
-                //
-                // // Get old planes
-                // var databasePlanes = await planeService.GetAllAsync();
-                //
-                // // Compare
-                // stopwatch.Restart();
-                // var planeComparer = new PlaneComparer();
-                // foreach (var plane in databasePlanes!)
-                // {
-                //     var resultIndex = newPlanesList.BinarySearch(plane, planeComparer);
-                //     if (resultIndex > -1)
-                //     {
-                //         matchesFound++;
-                //         // Console.WriteLine("InsertDate " + plane.Inserted.Value);
-                //         
-                //         //var planeToUpdate = planeService.GetByIcao24Async(newPlanesList[indedx].Icao24);
-                //         
-                //         
-                //         // var idtemp = plane.Id;
-                //          newPlanesList[resultIndex].Id = plane.Id;
-                //     }
-                //
-                // }
-                //
-                // stopwatch.Stop();
-                // logger.LogWarning("Found {Matches} matches in {Millis}ms", matchesFound,
-                //                       stopwatch.ElapsedMilliseconds);
-                //
-                // UpdateInNewContext(newPlanesList);
-            }
-        }
-
-        // private void UpdateInNewContext(IEnumerable<Plane> newPlanes)
-        // {
-        //     using var scope = services.CreateScope();
-        //     var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
-        //     planeService.UpdateAll(newPlanes);
-        //     // planeService.SaveAllAsync(newPlanes);
-        // }
-
-        private sealed class SkyApiResponse
-        {
-            public int time { get; set; }
-            public JsonElement[][] states { get; set; }
-
-            public List<Plane> ConvertToModel(bool sorted = false)
-            {
-                var planeList = new List<Plane>();
-                foreach (var state in states)
-                {
-                    var plane = new Plane
-                    {
-                        Icao24 = state[States.Icao24].GetString()!,
-                        CallSign = state[States.CallSign].GetString()?.TrimEnd(),
-                        OriginCountry = state[States.OriginCountry].GetString(),
-                        TimePosition = state[States.TimePosition]
-                                           .ValueKind != JsonValueKind.Null
-                                           ? state[States.TimePosition].GetInt32()
-                                           : -1,
-                        LastContact = state[States.LastContact]
-                                          .ValueKind != JsonValueKind.Null
-                                          ? state[States.LastContact].GetInt32()
-                                          : -1,
-                        Longitude = state[States.Longitude]
-                                        .ValueKind != JsonValueKind.Null
-                                        ? state[States.Longitude].GetSingle()
-                                        : -1,
-                        Latitude = state[States.Latitude].ValueKind != JsonValueKind.Null
-                                       ? state[States.Latitude].GetSingle()
-                                       : -1,
-                        BaroAltitude = state[States.BaroAltitude].ValueKind != JsonValueKind.Null
-                                           ? state[States.BaroAltitude].GetSingle()
-                                           : -1,
-                        OnGround = state[States.OnGround].GetBoolean(),
-                        Velocity = state[States.Velocity].ValueKind != JsonValueKind.Null
-                                       ? state[States.Velocity].GetSingle()
-                                       : -1,
-                        TrueTrack = state[States.TrueTrack].ValueKind != JsonValueKind.Null
-                                        ? state[States.TrueTrack].GetSingle()
-                                        : -1,
-                        VerticalRate = state[States.VerticalRate].ValueKind != JsonValueKind.Null
-                                           ? state[States.VerticalRate].GetSingle()
-                                           : -1,
-                        GeoAltitude = state[States.GeoAltitude].ValueKind != JsonValueKind.Null
-                                          ? state[States.GeoAltitude].GetSingle()
-                                          : -1,
-                        Squawk = state[States.Squawk].GetString(),
-                        Spi = state[States.Spi].GetBoolean(),
-                        PositionSource = (byte?)(state[States.PositionSource].ValueKind != JsonValueKind.Null
-                                                     ? state[States.PositionSource].GetByte()
-                                                     :-1)
-                    };
-                    planeList.Add(plane);
-                }
-
-                if (sorted) planeList.Sort(new PlaneComparer());
-                return planeList;
-            }
-
-            private sealed class States
-            {
-                public const byte
-                    Icao24 = 0,
-                    CallSign = 1,
-                    OriginCountry = 2,
-                    TimePosition = 3,
-                    LastContact = 4,
-                    Longitude = 5,
-                    Latitude = 6,
-                    BaroAltitude = 7,
-                    OnGround = 8,
-                    Velocity = 9,
-                    TrueTrack = 10,
-                    VerticalRate = 11,
-                    Sensors = 12,
-                    GeoAltitude = 13,
-                    Squawk = 14,
-                    Spi = 15,
-                    PositionSource = 16;
-            }
-        }
-
-        private sealed class PlaneComparer : IComparer<Plane>
-        {
-            public int Compare(Plane? x, Plane? other)
-            {
-                if (x == null) return -1;
-
-                if (other == null) return 1;
-
-                if (x.Icao24.Equals(other.Icao24)) return 0;
-
-                return string.Compare(x.Icao24, other.Icao24, StringComparison.Ordinal);
-            }
-        }
+        return await httpClient.SendAsync(httpRequestMessage);
     }
 }

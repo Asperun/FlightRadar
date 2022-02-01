@@ -1,18 +1,18 @@
-// import { memo, useEffect } from "react";
-// import MapComponent from "../components/MapComponent";
-
 import dynamic from "next/dynamic";
+import Head from "next/head";
+import * as React from "react";
 
-const MyAwesomeMap = dynamic(() => import("../components/MapNoSSR"), {
+const MapComponent = dynamic(() => import("../components/MapNoSSR"), {
   ssr: false,
 });
 
 const Map = () => {
-  return (
-    <div className="w-screen h-screen">
-      <MyAwesomeMap />
-    </div>
-  );
+  return (<>
+        <Head>
+          <title>Map - Flight Tracker</title>
+        </Head>
+        <MapComponent />
+      </>);
 };
 
 export default Map;
