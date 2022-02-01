@@ -5,16 +5,15 @@ using System.Text.Json.Serialization;
 namespace FlightRadar.Models;
 
 /// <summary>
-/// Model class for Flight entity
+///     Model class for Flight entity
 /// </summary>
 [Table("Flights")]
 public class Flight : EntityBase
 {
-    [Required]
-    [JsonIgnore]
-    public Plane Plane { get; set; } = null!;
-    [JsonIgnore]
-    public int PlaneId { get; set; }
+    [Required] [JsonIgnore] public Plane Plane { get; set; } = null!;
+
+    [JsonIgnore] public int PlaneId { get; set; }
+
     public bool IsCompleted { get; set; }
     public List<Checkpoint> Checkpoints { get; set; } = null!;
 

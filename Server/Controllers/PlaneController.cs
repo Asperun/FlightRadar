@@ -1,13 +1,8 @@
 ﻿using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using FlightRadar.Data;
-using FlightRadar.Data.DTO;
 using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Services.Events;
-using FlightRadar.Util;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using static FlightRadar.Data.DTO.ResponseDto;
 
@@ -22,7 +17,7 @@ public enum StatsType
 }
 
 /// <summary>
-/// REST controller class for aircraft related requests
+///     REST controller class for aircraft related requests
 /// </summary>
 [Route("api/v1/planes")]
 [ApiController]
@@ -42,12 +37,12 @@ public class PlaneController : ControllerBase
         this.planeBroadcaster = planeBroadcaster;
         jsonSerializerOptions = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
     }
 
     /// <summary>
-    /// Gets aircraft by Icao24 string from database
+    ///     Gets aircraft by Icao24 string from database
     /// </summary>
     /// <param name="icao24">Hex representation of aircraft identity</param>
     /// <param name="checkpoints">Include checkpoints of recent flight(s)</param>
@@ -63,12 +58,13 @@ public class PlaneController : ControllerBase
     }
 
 
-    /// <summary>
-    /// Gets statistics from database used by map side panel
-    /// </summary>
-    /// <returns>Stats in DTO</returns>
+  /// <summary>
+  /// Handles stats fetching
+  /// </summary>
+  /// <param name="statsType">Enum of stats type to be fetched</param>
+  /// <returns>OK if fetched</returns>
     [HttpGet("stats/{statsType}")]
-    public async Task<ActionResult<SidePanelStatsDto>> GetSidePanelStats([FromRoute] StatsType statsType)
+    public async Task<ActionResult> GetSidePanelStats([FromRoute] StatsType statsType)
     {
         switch (statsType)
         {
@@ -88,7 +84,7 @@ public class PlaneController : ControllerBase
     }
 
     /// <summary>
-    /// Handles sending Server Sent Events to all subscribers
+    ///     Handles sending Server Sent Events to all subscribers
     /// </summary>
     /// <param name="minLat">Minimal latitude boundary</param>
     /// <param name="maxLat">Maximal latitude boundary</param>
@@ -105,7 +101,6 @@ public class PlaneController : ControllerBase
         // Headers
         Response.Headers.Add("Content-Type", "text/event-stream");
         Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
-        // Response.Headers.Add("Cache-Control", "no-cache");
         // Response.Headers.Add("Transer-Encoding", "chunked");
 
 
@@ -128,15 +123,11 @@ public class PlaneController : ControllerBase
                 IEnumerable<PlaneListDto> planesFiltered;
 
                 if (minLat != 0 && maxLat != 0 && minLong != 0 && maxLong != 0)
-                {
                     planesFiltered = eventArgs.Planes
                                               .Where(p => p.Latitude > minLat && p.Latitude < maxLat)
                                               .Where(p => p.Longitude > minLong && p.Longitude < maxLong);
-                }
                 else
-                {
                     planesFiltered = eventArgs.Planes;
-                }
 
                 if (limitPlanes > 0) planesFiltered = planesFiltered.Take(limitPlanes);
 

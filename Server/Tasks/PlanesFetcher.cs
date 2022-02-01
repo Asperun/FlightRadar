@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using FlightRadar.Data.Comparers;
+﻿using System.Text.Json;
 using FlightRadar.Data.Requests;
 using FlightRadar.Models;
 using FlightRadar.Services;
@@ -8,7 +6,7 @@ using FlightRadar.Services;
 namespace FlightRadar.Tasks;
 
 /// <summary>
-/// OpenSky Api data fetching and processing class
+///     OpenSky Api data fetching and processing class
 /// </summary>
 public class PlanesFetcher : IHostedService, IDisposable
 {
@@ -19,8 +17,6 @@ public class PlanesFetcher : IHostedService, IDisposable
 
     private Timer task1 = null!;
     private Timer task2 = null!;
-
-    private delegate Task FetchCallback(List<Plane> planes);
 
     public PlanesFetcher(ILogger<PlanesFetcher> logger, IServiceScopeFactory services,
                          IConfiguration configuration, IHttpClientFactory httpClientFactory)
@@ -36,25 +32,12 @@ public class PlanesFetcher : IHostedService, IDisposable
         task1?.Dispose();
         task2?.Dispose();
     }
-    
-    private async Task Callback_UpdatePlanes(List<Plane> planes)
-    {
-        logger.LogWarning("Updating Planes");
-        using var scope = services.CreateScope();
-        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
-        await planeService.UpdatePlanes(planes);
-        logger.LogWarning("Updated Planes");
-    }
 
-    private async Task Callback_UpdateCheckpoints(List<Plane> planes)
-    {
-        logger.LogWarning("Updating Checkpoints");
-        using var scope = services.CreateScope();
-        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
-        await planeService.UpdateCheckpoints(planes);
-        logger.LogWarning("Updated Checkpoints");
-    }
-
+    /// <summary>
+    /// Stats async tasks
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Status of a task</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         task1 = new Timer(state => FetchPlanes(state, Callback_UpdatePlanes), null, TimeSpan.Zero
@@ -64,6 +47,11 @@ public class PlanesFetcher : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Stops all tasks
+    /// </summary>
+    /// <param name="stoppingToken"></param>
+    /// <returns>Status of a task</returns>
     public Task StopAsync(CancellationToken stoppingToken)
     {
         task1?.Change(Timeout.Infinite, 0);
@@ -71,6 +59,37 @@ public class PlanesFetcher : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Callback function used for updating current coordinates of a plane as delegate for post-fetching processing
+    /// </summary>
+    /// <param name="planes">List of fetched planes</param>
+    private async Task Callback_UpdatePlanes(List<Plane> planes)
+    {
+        logger.LogWarning("Updating Planes");
+        using var scope = services.CreateScope();
+        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
+        await planeService.UpdatePlanes(planes);
+        logger.LogWarning("Updated Planes");
+    }
+
+    /// <summary>
+    /// Callback function used for updating checkpoints based on current coordinates as delegate for post-fetching processing
+    /// </summary>
+    /// <param name="planes">List of fetched planes</param>
+    private async Task Callback_UpdateCheckpoints(List<Plane> planes)
+    {
+        logger.LogWarning("Updating Checkpoints");
+        using var scope = services.CreateScope();
+        var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
+        await planeService.UpdateCheckpoints(planes);
+        logger.LogWarning("Updated Checkpoints");
+    }
+
+    /// <summary>
+    /// Used to fetch data from OpenSky Network and process it
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="callback">Callback delegate for post-fetching tasks</param>
     private async void FetchPlanes(object? state, FetchCallback callback)
     {
         using var httpResponseMessage = await SendFetchRequest();
@@ -89,11 +108,16 @@ public class PlanesFetcher : IHostedService, IDisposable
             logger.LogWarning("Fetch failed - Response was null");
             return;
         }
+
         var recentPlanes = response.ToModelList();
-        
+
         await callback(recentPlanes);
     }
 
+    /// <summary>
+    /// Sends fetch request for OpenSky network API
+    /// </summary>
+    /// <returns>Response</returns>
     private async Task<HttpResponseMessage> SendFetchRequest()
     {
         var connectionString = string.Format("https://{0}:{1}@opensky-network.org/api/states/all",
@@ -105,4 +129,6 @@ public class PlanesFetcher : IHostedService, IDisposable
 
         return await httpClient.SendAsync(httpRequestMessage);
     }
+
+    private delegate Task FetchCallback(List<Plane> planes);
 }

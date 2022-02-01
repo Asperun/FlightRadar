@@ -3,29 +3,25 @@ using System.Diagnostics;
 using EFCore.BulkExtensions;
 using FlightRadar.Data;
 using FlightRadar.Data.Comparers;
-using FlightRadar.Data.DTO;
 using FlightRadar.Data.Projections;
 using FlightRadar.Models;
 using FlightRadar.Util;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
-using Z.EntityFramework.Plus;
-using static System.String;
 using static FlightRadar.Data.DTO.ResponseDto;
 
 namespace FlightRadar.Services;
 
 /// <summary>
-/// Services used for aircraft operations
+///     Services used for aircraft operations
 /// </summary>
 public class PlaneService
 {
+    private const float turnRadiusThreshold = 35f;
+    private static readonly PlaneIcao24Comparer planeComparer = new();
+    private static List<Plane> planeListSingleton = new();
     private readonly ILogger<PlaneService> logger;
     private readonly PlaneBroadcaster planeBroadcaster;
     private readonly PlaneContext planeContext;
-    private static readonly PlaneIcao24Comparer planeComparer = new();
-    private static List<Plane> planeListSingleton = new();
-    private const float turnRadiusThreshold = 35f;
 
     public PlaneService(PlaneContext planeContext, PlaneBroadcaster planeBroadcaster, ILogger<PlaneService> logger)
     {
@@ -34,40 +30,59 @@ public class PlaneService
         this.logger = logger;
     }
 
+    /// <summary>
+    /// Gets most recent aircraft from memory list
+    /// </summary>
+    /// <returns>Read only collection of aircraft</returns>
     public static ReadOnlyCollection<Plane> GetCurrentPlanes()
     {
         return planeListSingleton.AsReadOnly();
     }
 
+    /// <summary>
+    /// Fetches amount of aircraft grouped by country
+    /// </summary>
+    /// <returns>List of aircraft count grouped by country</returns>
     public async Task<List<CountryAmountProjection>> GetRegisteredPerCountry()
     {
         var a = await planeContext.CountryAmountProj
-                                 .FromSqlRaw(@"Select RegCountry as Country, Count(Id) as Count
+                                  .FromSqlRaw(@"Select RegCountry as Country, Count(Id) as Count
                                                 from Planes as p
                                                 Group By RegCountry 
                                                 Order By Count Desc")
-                                 .AsNoTracking()
-                    .ToListAsync();
+                                  .AsNoTracking()
+                                  .ToListAsync();
 
         Console.WriteLine(a.Count);
         return a;
     }
 
+    /// <summary>
+    /// Fetches amount of unique aircraft currently in air grouped by hour of the day
+    /// </summary>
+    /// <param name="dateUtc">Date to look for</param>
+    /// <param name="includeZones">Include columns for zone sorting</param>
+    /// <returns></returns>
     public async Task<List<HourAmountProjection>> GetHourlyAmountFromDate(DateTime dateUtc, bool includeZones = false)
     {
         var dayStart = new DateTime(dateUtc.Year, dateUtc.Month, dateUtc.Day);
         var dayEnd = dayStart.Add(new TimeSpan(23, 59, 59));
-        
-       return await planeContext.HourAmountProj
-                                   .FromSqlRaw(@"Select DATEPART(HOUR , CreationTime) as Hour, 
+
+        return await planeContext.HourAmountProj
+                                 .FromSqlRaw(@"Select DATEPART(HOUR , CreationTime) as Hour, 
                                                 Count(distinct FlightId) as Count
                                                 from Checkpoints
                                                     where CreationTime BETWEEN {0} and {1}
                                                 Group By DatePART(HOUR , Checkpoints.CreationTime)
                                                 Order BY DatePART(HOUR , Checkpoints.CreationTime)", dayStart, dayEnd)
-                                   .AsNoTracking()
-                                   .ToListAsync();
+                                 .AsNoTracking()
+                                 .ToListAsync();
     }
+
+    /// <summary>
+    /// Fetches generic stats used by index page
+    /// </summary>
+    /// <returns>Stats</returns>
     public async Task<MainPageProjection> GetMainPageProjection()
     {
         return await planeContext.MainPageProj
@@ -79,7 +94,7 @@ public class PlaneService
     }
 
     /// <summary>
-    /// Gets aircraft from database by Icao24 value
+    ///     Gets aircraft from database by Icao24 value
     /// </summary>
     /// <param name="icao24">Hex representation of aircraft identity</param>
     /// <param name="withCheckpoints">Include checkpoints of recent flight</param>
@@ -88,23 +103,19 @@ public class PlaneService
     {
         Plane plane;
         if (withCheckpoints)
-        {
             plane = await planeContext.Planes
                                       .AsNoTracking()
                                       .Include(p => p.Flights.Where(f => !f.IsCompleted))
                                       .ThenInclude(f => f.Checkpoints)
                                       .FirstAsync(p => p.Icao24.Equals(icao24));
-        }
         else
-        {
             plane = await planeContext.Planes.AsNoTracking().FirstAsync(p => p.Icao24.Equals(icao24));
-        }
 
         return plane;
     }
 
     /// <summary>
-    /// Checks if aircraft is within bounds of specified coordinates
+    ///     Checks if aircraft is within bounds of specified coordinates
     /// </summary>
     /// <param name="plane">Aircraft</param>
     /// <param name="coords">Coordinates</param>
@@ -116,7 +127,7 @@ public class PlaneService
     }
 
     /// <summary>
-    /// Gets statistics about aircraft from memory list
+    ///     Gets statistics about aircraft from memory list
     /// </summary>
     /// <remarks>Used by side panel in front-end</remarks>
     /// <returns>DTO of statistics</returns>
@@ -137,7 +148,7 @@ public class PlaneService
 
 
     /// <summary>
-    ///  Gets all aircraft in specified coordinates, fallbacks to database if memory is empty
+    ///     Gets all aircraft in specified coordinates, fallbacks to database if memory is empty
     /// </summary>
     /// <param name="minLat">Minimal latitude boundary</param>
     /// <param name="maxLat">Maximal latitude boundary</param>
@@ -151,28 +162,24 @@ public class PlaneService
     {
         List<PlaneListDto> planes;
         if (planeListSingleton.Any())
-        {
             planes = planeListSingleton
                      .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
                      .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat && plane.Longitude >= minLong && plane.Longitude <= maxLong)
                      .Take(maxPlanes)
                      .ToList();
-        }
         else
-        {
             planes = planeContext.Planes
                                  .AsNoTracking()
                                  .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
                                  .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat && plane.Longitude >= minLong && plane.Longitude <= maxLong)
                                  .Take(maxPlanes)
                                  .ToList();
-        }
 
         return planes;
     }
 
     /// <summary>
-    /// Updates subscribers with new aircraft and current values in database
+    ///     Updates subscribers with new aircraft and current values in database
     /// </summary>
     /// <param name="planes">List of aircraft</param>
     public async Task UpdatePlanes(List<Plane> planes)
@@ -184,24 +191,27 @@ public class PlaneService
         planeBroadcaster.UpdateAndPublish(planes);
 
         // 2. Update database based on Icao24 hex string
-         planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
         await planeContext.BulkInsertOrUpdateAsync(planes, new BulkConfig
         {
             UpdateByProperties = new List<string>(1) { nameof(Plane.Icao24) },
-            PropertiesToExcludeOnUpdate = new List<string>(2){ nameof(Plane.Icao24),nameof(Plane.RegCountry)},
+            PropertiesToExcludeOnUpdate = new List<string>(2) { nameof(Plane.Icao24), nameof(Plane.RegCountry) },
             BatchSize = 5000,
             TrackingEntities = false,
-            WithHoldlock = false,
+            WithHoldlock = false
         });
-         planeContext.ChangeTracker.AutoDetectChangesEnabled = true;
-
+        planeContext.ChangeTracker.AutoDetectChangesEnabled = true;
     }
 
-
+/// <summary>
+/// Helper method for mapping properties of a Plane to Checkpoint
+/// </summary>
+/// <param name="plane">Values to copy from</param>
+/// <param name="flightId">FlightId of assigned flight</param>
+/// <returns>Checkpoint with copied values</returns>
     private static Checkpoint GetCheckpointFromPlane(Plane plane, int flightId = -1)
     {
         if (flightId == -1)
-        {
             return new Checkpoint
             {
                 Altitude = plane.GeoAltitude,
@@ -211,7 +221,6 @@ public class PlaneService
                 Velocity = plane.Velocity,
                 VerticalRate = plane.VerticalRate
             };
-        }
 
         return new Checkpoint
         {
@@ -226,7 +235,7 @@ public class PlaneService
     }
 
     /// <summary>
-    /// Updates database with new flights/checkpoints if condition is met
+    ///     Updates database with new flights/checkpoints if condition is met
     /// </summary>
     /// <param name="planes">List of aircraft</param>
     public async Task UpdateCheckpoints(List<Plane> planes)
@@ -287,10 +296,8 @@ public class PlaneService
                     var lastCheckpoint = dbPlane.Flights.First().Checkpoints.Last();
 
                     if (Math.Abs(lastCheckpoint.TrueTrack - memoryPlane.TrueTrack) > turnRadiusThreshold) // turned 20 degree since last checkpoint
-                    {
                         dbPlane.Flights.First().Checkpoints.Add(GetCheckpointFromPlane(dbPlane));
-                        // planeContext.Add(GetCheckpointFromPlane(dbPlane, lastCheckpoint.FlightId));
-                    }
+                    // planeContext.Add(GetCheckpointFromPlane(dbPlane, lastCheckpoint.FlightId));
 
                     break;
                 }
@@ -307,7 +314,7 @@ public class PlaneService
         // 3. Update DB
         await planeContext.BulkSaveChangesAsync(new BulkConfig
         {
-            BatchSize = 5000,
+            BatchSize = 5000
             // TrackingEntities = false,
             // WithHoldlock = false,
         });

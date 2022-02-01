@@ -3,11 +3,18 @@ using FlightRadar.Models;
 
 namespace FlightRadar.Data.Requests;
 
+/// <summary>
+/// OpenSky Api request projection class
+/// </summary>
 public sealed class OpenSkyRequest
 {
     public int time { get; set; }
     public JsonElement[][] states { get; set; } = null!;
 
+    /// <summary>
+    /// Converts response to model list
+    /// </summary>
+    /// <returns>List of aircraft according to model</returns>
     public List<Plane> ToModelList()
     {
         var planeList = (from state in states

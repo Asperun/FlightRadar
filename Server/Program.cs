@@ -1,26 +1,20 @@
 using System.IO.Compression;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FlightRadar.Data;
-using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Tasks;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-
-/*  #####################################################
-    ######################## SERVICES ##################
-    #################################################### */
-
+builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme).AddCertificate();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -30,7 +24,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddHttpClient<PlanesFetcher>("OpenSky");
 builder.Services.AddDbContext<PlaneContext>(x => x.UseSqlServer(connectionString));
 builder.Services.AddScoped<PlaneService>();
-builder.Services.AddSingleton<PlaneBroadcaster>(); 
+builder.Services.AddSingleton<PlaneBroadcaster>();
 
 // ====== Swagger ======
 builder.Services.AddEndpointsApiExplorer();
@@ -38,14 +32,14 @@ builder.Services.AddSwaggerGen();
 
 // ====== Async Background Tasks ======
 builder.Services.AddHostedService<PlanesFetcher>();
-
 // ====== HTTP Protocols ======
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
-    options.Listen(IPAddress.Any, 5001, listenOptions =>
+    // options.Listen(IPAddress.Any, 5001, listenOptions =>
+    options.Listen(IPAddress.Any, 443, listenOptions =>
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-        // listenOptions.UseHttps();
+        // listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        listenOptions.UseHttps(StoreName.My,"fantasea.pl",false,StoreLocation.CurrentUser);
     });
 });
 
@@ -60,15 +54,8 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
 
-/*  #####################################################
-    ####################### APP BUILDER ################
-    #################################################### */
 
 var app = builder.Build();
-
-// ====== CORS ======
-
-
 
 // ====== HTTP request pipeline ======
 if (app.Environment.IsDevelopment())
@@ -79,16 +66,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
-app.UseHttpsRedirection();
 app.UseRouting();
+// app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().Build());
 app.UseAuthorization();
 app.UseEndpoints(endpoint => endpoint.MapControllers());
 
-
-/*  #####################################################
-    ######################## DATABASE ##################
-    #################################################### */
 
 // ====== Migrations ======
 var planeCtx = app.Services.CreateScope().ServiceProvider.GetRequiredService<PlaneContext>();

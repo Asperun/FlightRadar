@@ -1,20 +1,18 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FlightRadar.Models;
 
 /// <summary>
-/// Model class for Plane entity
+///     Model class for Plane entity
 /// </summary>
 [Table("Planes")]
 public class Plane : EntityBase
 {
-    [MaxLength(6)] 
-    [Required] 
-    public string Icao24 { get; set; } = null!;
-    [MaxLength(8)]
-    public string? CallSign { get; set; }
+    [MaxLength(6)] [Required] public string Icao24 { get; set; } = null!;
+
+    [MaxLength(8)] public string? CallSign { get; set; }
+
     public int LastContact { get; set; }
     public float Longitude { get; set; }
     public float Latitude { get; set; }
@@ -25,6 +23,4 @@ public class Plane : EntityBase
     public float GeoAltitude { get; set; }
     public string RegCountry { get; set; } = null!;
     public List<Flight> Flights { get; set; } = null!;
-
-
 }

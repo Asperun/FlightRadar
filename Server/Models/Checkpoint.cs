@@ -5,16 +5,15 @@ using System.Text.Json.Serialization;
 namespace FlightRadar.Models;
 
 /// <summary>
-/// Model class for Checkpoint entity
+///     Model class for Checkpoint entity
 /// </summary>
 [Table("Checkpoints")]
 public class Checkpoint : EntityBase
 {
-    [Required] 
-    [JsonIgnore]
-    public Flight Flight { get; set; } = null!;
-    [JsonIgnore]
-    public int FlightId { get; set;}
+    [Required] [JsonIgnore] public Flight Flight { get; set; } = null!;
+
+    [JsonIgnore] public int FlightId { get; set; }
+
     public DateTime? CreationTime { get; set; }
     public float Longitude { get; set; }
     public float Latitude { get; set; }
@@ -25,6 +24,7 @@ public class Checkpoint : EntityBase
 
     public override string ToString()
     {
-        return $"{nameof(FlightId)}: {FlightId}, {nameof(Longitude)}: {Longitude}, {nameof(Latitude)}: {Latitude}, {nameof(Velocity)}: {Velocity}, {nameof(Altitude)}: {Altitude}, {nameof(TrueTrack)}: {TrueTrack}, {nameof(VerticalRate)}: {VerticalRate}";
+        return
+            $"{nameof(FlightId)}: {FlightId}, {nameof(Longitude)}: {Longitude}, {nameof(Latitude)}: {Latitude}, {nameof(Velocity)}: {Velocity}, {nameof(Altitude)}: {Altitude}, {nameof(TrueTrack)}: {TrueTrack}, {nameof(VerticalRate)}: {VerticalRate}";
     }
 }

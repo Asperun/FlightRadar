@@ -1,5 +1,8 @@
 ﻿namespace FlightRadar.Data.Projections;
 
+/// <summary>
+/// Projection class used for stats fetching
+/// </summary>
 public sealed class MainPageProjection
 {
     public int TotalPlanes { get; set; }
