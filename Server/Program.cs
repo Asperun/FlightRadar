@@ -1,10 +1,12 @@
 using System.IO.Compression;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using FlightRadar.Data;
 using FlightRadar.Services;
 using FlightRadar.Tasks;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-
+builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme).AddCertificate();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -30,14 +32,14 @@ builder.Services.AddSwaggerGen();
 
 // ====== Async Background Tasks ======
 builder.Services.AddHostedService<PlanesFetcher>();
-
 // ====== HTTP Protocols ======
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
-    options.Listen(IPAddress.Any, 5001, listenOptions =>
+    // options.Listen(IPAddress.Any, 5001, listenOptions =>
+    options.Listen(IPAddress.Any, 443, listenOptions =>
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-        // listenOptions.UseHttps();
+        // listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        listenOptions.UseHttps(StoreName.My,"fantasea.pl",false,StoreLocation.CurrentUser);
     });
 });
 
@@ -64,8 +66,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
-app.UseHttpsRedirection();
 app.UseRouting();
+// app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().Build());
 app.UseAuthorization();
 app.UseEndpoints(endpoint => endpoint.MapControllers());
