@@ -145,7 +145,8 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
                             Updated
                         </div>
                         <div>
-                            <p className={"text-orange-600"}>{timeSinceStart !== undefined && timeSinceStart || "?"}</p>
+                            {/*<p className={"text-orange-600"}>{timeSinceStart !== undefined && timeSinceStart || "?"}</p>*/}
+                            <p className={"text-orange-600"}>{"?"}</p>
                             In air
                         </div>
                         <div>
