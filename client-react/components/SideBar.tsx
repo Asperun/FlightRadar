@@ -141,12 +141,12 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
                             Direction`
                         </div>
                         <div>
-                            <p className={"text-orange-600"}>{dbPlaneInfo.data && Math.abs((Date.now() - dbPlaneInfo.data.lastContact) / 1000).toFixed()  + "s" || "?"}</p>
+                            {/*<p className={"text-orange-600"}>{dbPlaneInfo.data && Math.abs((Date.now() - dbPlaneInfo.data.lastContact) / 1000).toFixed()  + "s" || "?"}</p>*/}
+                            <p className={"text-orange-600"}>{"?"}</p>
                             Updated
                         </div>
                         <div>
-                            {/*<p className={"text-orange-600"}>{timeSinceStart !== undefined && timeSinceStart || "?"}</p>*/}
-                            <p className={"text-orange-600"}>{"?"}</p>
+                            <p className={"text-orange-600"}>{timeSinceStart !== undefined && timeSinceStart || "?"}</p>
                             In air
                         </div>
                         <div>
