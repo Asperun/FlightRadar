@@ -258,16 +258,31 @@ const Stats = ( {hourlyStats, regionStats} ) => {
 
 
 export async function getStaticProps() {
-  const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly').then(res => res.json());
+  // const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly').then(res => res.json());
+
+  // [{"month":"February","day":2,"hour":0,"count":28600},{"month":"February","day":2,"hour":1,"count":25422}}
+  // const hourlyStatsJson = await fetch('http://localhost:5000/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json());
+  const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json());
+  // const regionStatsJson = await fetch('http://localhost:5000/api/v1/planes/stats/planesregistered').then(res => res.json());
   const regionStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json());
 
-  const hourlyStats =
-            [{
-              id: "31/01/2022",
-              data: hourlyStatsJson.map(obj => {
-                return {x: obj.hour, y: obj.count}
-              })
-            }];
+
+  const newArr    = groupBy(hourlyStatsJson, "day");
+  let hourlyStats = [];
+  for (let newArrKey in newArr) {
+    hourlyStats.push(
+        {
+          id: newArr[newArrKey][0].month + " " + newArrKey,
+          data: newArr[newArrKey].map(( arrObj ) => {
+            return {
+              x: arrObj.hour,
+              y: arrObj.count
+            }
+          })
+        }
+    )
+
+  }
 
   const regionStats = regionStatsJson.map(obj => {
     return {id: convertCountryToAlpha3Code(obj.country), value: obj.count}
@@ -280,6 +295,15 @@ export async function getStaticProps() {
     },
     revalidate: 3600, // 1hr in seconds
   }
+}
+
+
+function groupBy( arr, property ) {
+  return arr.reduce(function ( memo, x ) {
+    if (!memo[x[property]]) { memo[x[property]] = []; }
+    memo[x[property]].push(x);
+    return memo;
+  }, {});
 }
 
 export default Stats;

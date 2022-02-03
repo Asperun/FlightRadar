@@ -36,6 +36,7 @@ const Index = ( {data} ) => {
 
 export async function getStaticProps() {
   const data = await fetch('https://fantasea.pl/api/v1/planes/stats/mainpage').then(res => res.json());
+  // const data = await fetch('http://localhost:5000/api/v1/planes/stats/mainpage').then(res => res.json());
   return {
     props: {
       data
