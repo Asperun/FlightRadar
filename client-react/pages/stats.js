@@ -7,52 +7,12 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import Head from "next/head";
 
-const Stats = ( {hourlyStats, regionStats} ) => {
+const Stats = ( {hourlyStats, regionStats, hourlyPerRegionStats} ) => {
   const [screenWidth, setScreenWidth] = useState(0);
 
   useEffect(() => {
     setScreenWidth(screen.width > 900 ? 900 : screen.width)
   }, []);
-
-
-  const crossRegionPlanes = [
-    {
-      id: "EU",
-      data: [
-        {x: 0, y: 7},
-        {x: 1, y: 5},
-        {x: 2, y: 11},
-        {x: 3, y: 9},
-        {x: 4, y: 13},
-        {x: 7, y: 16},
-        {x: 9, y: 12},
-      ]
-    },
-    {
-      id: "NA",
-      data: [
-        {x: 0, y: 2},
-        {x: 1, y: 4},
-        {x: 2, y: 5},
-        {x: 3, y: 6},
-        {x: 4, y: 7},
-        {x: 7, y: 8},
-        {x: 9, y: 9},
-      ],
-    },
-    {
-      id: "Other",
-      data: [
-        {x: 0, y: 24},
-        {x: 1, y: 18},
-        {x: 2, y: 15},
-        {x: 3, y: 12},
-        {x: 4, y: 11},
-        {x: 7, y: 7},
-        {x: 9, y: 2},
-      ],
-    },
-  ]
 
   const LineGraph = ( {data} ) => {
     return (
@@ -240,7 +200,7 @@ const Stats = ( {hourlyStats, regionStats} ) => {
           <div className={"mx-auto"}>
             <h1 className={"text-xl"}>Total unique aircraft across the regions recorded today</h1>
             <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-              <LineGraph data={crossRegionPlanes} />
+              <LineGraph data={hourlyPerRegionStats} />
             </div>
           </div>
           <div className={"mx-auto mb-8"}>
@@ -260,20 +220,31 @@ const Stats = ( {hourlyStats, regionStats} ) => {
 export async function getStaticProps() {
   // const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly').then(res => res.json());
 
+  const promises =[]
   // [{"month":"February","day":2,"hour":0,"count":28600},{"month":"February","day":2,"hour":1,"count":25422}}
-  // const hourlyStatsJson = await fetch('http://localhost:5000/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json());
-  const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json());
-  // const regionStatsJson = await fetch('http://localhost:5000/api/v1/planes/stats/planesregistered').then(res => res.json());
-  const regionStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json());
+ // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
+promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
+  // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/planesregistered').then(res => res.json()))
+promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json()));
+  // http://localhost:5000/api/v1/planes/stats/hourlyperregion
+  // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/hourlyperregion').then(res => res.json()));
+  promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/hourlyperregion').then(res => res.json()));
 
+  let [hourlyStatsJson, regionStatsJson,hourlyPerRegionStatsJson] = await Promise.all(promises);
 
-  const newArr    = groupBy(hourlyStatsJson, "day");
-  let hourlyStats = [];
-  for (let newArrKey in newArr) {
+  // Geo Map data
+  const regionStats = regionStatsJson.map(obj => {
+    return {id: convertCountryToAlpha3Code(obj.country), value: obj.count}
+  })
+
+  // Hourly total stats
+  const hourlyGrouped = groupBy(hourlyStatsJson, "day");
+  let hourlyStats     = [];
+  for (let newArrKey in hourlyGrouped) {
     hourlyStats.push(
         {
-          id: newArr[newArrKey][0].month + " " + newArrKey,
-          data: newArr[newArrKey].map(( arrObj ) => {
+          id: hourlyGrouped[newArrKey][0].month + " " + newArrKey,
+          data: hourlyGrouped[newArrKey].map(( arrObj ) => {
             return {
               x: arrObj.hour,
               y: arrObj.count
@@ -281,16 +252,35 @@ export async function getStaticProps() {
           })
         }
     )
-
   }
 
-  const regionStats = regionStatsJson.map(obj => {
-    return {id: convertCountryToAlpha3Code(obj.country), value: obj.count}
-  })
+  let hourlyStats2  = [];
+  const regionNames = ["Europe", "North America"]
+
+  for (let k = 0; k < hourlyPerRegionStatsJson.length; k++) {
+    const grouped = groupBy(hourlyPerRegionStatsJson[k], "day");
+    for (let newArrKey in grouped) {
+      hourlyStats2.push(
+          {
+            id: regionNames.pop(),
+            data: grouped[newArrKey].map(( arrObj ) => {
+              return {
+                x: arrObj.hour,
+                y: arrObj.count
+              }
+            })
+          }
+      )
+
+    }
+
+  }
+  let hourlyPerRegionStats = hourlyStats2
 
   return {
     props: {
       hourlyStats,
+      hourlyPerRegionStats,
       regionStats
     },
     revalidate: 3600, // 1hr in seconds
@@ -305,5 +295,8 @@ function groupBy( arr, property ) {
     return memo;
   }, {});
 }
+
+
+
 
 export default Stats;

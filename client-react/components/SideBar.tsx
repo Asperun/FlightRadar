@@ -31,12 +31,12 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
             const checkpoints = dbPlaneInfo.data.flights[0].checkpoints;
 
             timeSinceStart = convertSeconds(Math.floor(
-                (Date.now() - Date.parse(checkpoints[0].creationTime)) / 1000
+                (Date.parse(new Date().toUTCString()) - 3600000 - Date.parse(checkpoints[0].creationTime)) / 1000
             ));
 
-            distanceSinceStart = calcDistance(plane.latitude,plane.longitude,checkpoints[checkpoints.length - 1].latitude,checkpoints[checkpoints.length-1].longitude);
+            distanceSinceStart = calcDistance(plane.latitude, plane.longitude, checkpoints[checkpoints.length - 1].latitude, checkpoints[checkpoints.length - 1].longitude);
             for (let i = 0; i < checkpoints.length - 1; i++) {
-                distanceSinceStart += calcDistance(checkpoints[i].latitude,checkpoints[i].longitude,checkpoints[i+1].latitude,checkpoints[i+1].longitude);
+                distanceSinceStart += calcDistance(checkpoints[i].latitude, checkpoints[i].longitude, checkpoints[i + 1].latitude, checkpoints[i + 1].longitude);
             }
         }
 
@@ -48,15 +48,49 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
                     </button>
                     <div className="basis-2/12 fade-to-right">
                         <div className="ml-2 flex items-center text-3xl text-white no-scrollbar">
-                            {openSkyPlaneInfo.data && <Image className={"opacity-100"}
-                                                             src={`https://hatscripts.github.io/circle-flags/flags/${convertCountryToAlpha2Code(openSkyPlaneInfo.data.country)}.svg`}
-                                                             alt={''}
-                                                             title={openSkyPlaneInfo.data.country}
-                                                             width={28}
-                                                             height={28}
-                                                             layout={"fixed"}
-                                                             quality={100} /> || openSkyPlaneInfo.isLoading && <svg className="animate-spin h-6 w-6"
-                                                                                                                    viewBox="0 0 24 24">
+                            {openSkyPlaneInfo.data &&
+                                // <Image className={"opacity-100"}
+                                //        src={`https://hatscripts.github.io/circle-flags/flags/${convertCountryToAlpha2Code(openSkyPlaneInfo.data.country)}.svg`}
+                                //        alt={''}
+                                //        title={openSkyPlaneInfo.data.country}
+                                //        width={28}
+                                //        height={28}
+                                //        layout={"fixed"}
+                                //        quality={100} /> || openSkyPlaneInfo.isLoading && <svg className="animate-spin h-6 w-6"
+                                //                                                               viewBox="0 0 24 24">
+                                <img className={"opacity-100"}
+                                     src={`https://hatscripts.github.io/circle-flags/flags/${convertCountryToAlpha2Code(openSkyPlaneInfo.data.country)}.svg`}
+                                     alt={''}
+                                     title={openSkyPlaneInfo.data.country}
+                                     width={28}
+                                     height={28} /> || openSkyPlaneInfo.isLoading && <svg className="animate-spin h-6 w-6"
+                                                                                          viewBox="0 0 24 24">
+                                  <path className="opacity-75"
+                                        fill="#BB86FC"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                  <circle className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4" />
+                                </svg> || openSkyPlaneInfo.isError && <strong>?</strong>}
+                            <div className={"ml-1 text-orange-400 whitespace-nowrap"}>
+                                {(planeManufactuer || "Unknown")} {' '}
+                                <span className={"text-white"}>{(openSkyPlaneInfo.data?.typecode || "")}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-full relative flex content-center items-center justify-center">
+                        {planeImage.data && planeImage.data.photos.length > 0 &&
+                            // <Image src={planeImage.data.photos[0]?.thumbnail_large?.src}
+                            //        alt={"plane.png"}
+                            //        layout={"fill"} /> || planeImage.isLoading && <svg className="animate-spin h-12 w-12 "
+                            //                                                           viewBox="0 0 24 24">
+                              <img src={planeImage.data.photos[0]?.thumbnail_large?.src}
+                                   alt={"plane.png"}
+                                   /> || planeImage.isLoading && <svg className="animate-spin h-12 w-12 "
+                                                                                      viewBox="0 0 24 24">
                               <path className="opacity-75"
                                     fill="#BB86FC"
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -66,28 +100,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
                                       r="10"
                                       stroke="currentColor"
                                       strokeWidth="4" />
-                            </svg> || openSkyPlaneInfo.isError && <strong>?</strong>}
-                            <div className={"ml-1 text-orange-400 whitespace-nowrap"}>
-                                {(planeManufactuer || "Unknown")} {' '}
-                                <span className={"text-white"}>{(openSkyPlaneInfo.data?.typecode || "")}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="h-full relative flex content-center items-center justify-center">
-                        {planeImage.data && planeImage.data.photos.length > 0 && <Image src={planeImage.data.photos[0]?.thumbnail_large?.src}
-                                                                                        alt={"plane.png"}
-                                                                                        layout={"fill"} /> || planeImage.isLoading && <svg className="animate-spin h-12 w-12 "
-                                                                                                                                           viewBox="0 0 24 24">
-                          <path className="opacity-75"
-                                fill="#BB86FC"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          <circle className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4" />
-                        </svg> || <strong className={"text-4xl opacity-80"}>?</strong>}
+                            </svg> || <strong className={"text-4xl opacity-80"}>?</strong>}
 
                     </div>
                 </div>
@@ -150,7 +163,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
                             In air
                         </div>
                         <div>
-                            <p className={"text-orange-600"}>{distanceSinceStart !== undefined && distanceSinceStart.toFixed()+"km" || "?"}</p>
+                            <p className={"text-orange-600"}>{distanceSinceStart !== undefined && distanceSinceStart.toFixed() + "km" || "?"}</p>
                             Distance
                         </div>
                     </div>
@@ -204,18 +217,19 @@ function areEqual(prevProps: Props, nextProps: Props): boolean {
 
 // Convert seconds to time string
 function convertSeconds(seconds: number): string {
-    return (seconds / (60 * 60)).toFixed() + "hr " +
+    return (Math.floor(seconds / (60 * 60)) > 0 ? (seconds / (60 * 60)).toFixed() + "hr " :"") +
         (seconds / 60 % 60).toFixed() + "min";
     // convert(seconds % 60)+"s"
 }
 
+
 // Calculates distance between two coords
-function calcDistance(lat1:number, lon1:number, lat2:number, lon2:number):number {
+function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const p = 0.017453292519943295;    // Math.PI / 180
     const c = Math.cos;
-    const a = 0.5 - c((lat2 - lat1) * p)/2 +
+    const a = 0.5 - c((lat2 - lat1) * p) / 2 +
         c(lat1 * p) * c(lat2 * p) *
-        (1 - c((lon2 - lon1) * p))/2;
+        (1 - c((lon2 - lon1) * p)) / 2;
 
     return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
 }

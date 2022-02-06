@@ -104,22 +104,106 @@
 // const a =new Date().getTime();
 // const b = Date.parse("2022-01-29T16:49:54.65")
 // var minutes =  Math.floor((a - b) / 1000 / 60);
+//
+// function getRandomData() {
+//
+//   let theList = [];
+//
+//   for (let i = 0; i < 24; i++) {
+//     theList.push(
+//         {
+//           x: i,
+//           y: Math.floor(Math.random() * 100)
+//         }
+//     )
+//   }
+//
+//
+//   return theList;
+// }
+//
+// console.log(getRandomData())
 
-function getRandomData() {
 
-  let theList = [];
+// const date = "2022-02-02T11:01:32.71"
+//
+// const dateCp = Date.parse(date);
+// const dateNow = Date.now();
+//
+// console.log(dateCp)
+// console.log(dateNow)
+//
+// console.log( Math.floor((dateNow - dateCp) / 1000) );
+//
+// console.log(convertSeconds(Math.floor((dateNow - dateCp) / 1000)))
+//
+// function convertSeconds(seconds) {
+//   // var convert = function(x) { return x; }
+//   return (seconds / (60*60)).toFixed() + "hr " +
+//          (seconds / 60 % 60).toFixed()+ "min";
+//          // convert(seconds % 60)+"s"
+// }
 
-  for (let i = 0; i < 24; i++) {
-    theList.push(
-        {
-          x: i,
-          y: Math.floor(Math.random() * 100)
-        }
-    )
-  }
+// function convertSeconds(seconds) {
+//   var convert = function(x) { return (x < 10) ? "0"+x : x; }
+//   return convert(parseInt(seconds / (60*60))) + "hr" +
+//          convert(parseInt(seconds / 60 % 60)) + ":" +
+//          convert(seconds % 60)
+// }
+
+//
+// const a = [{"month": "February", "day": 2, "hour": 0, "count": 28600}, {"month": "February", "day": 2, "hour": 1, "count": 25422}, {
+//   "month": "February",
+//   "day": 1,
+//   "hour": 1,
+//   "count": 25422
+// }]
+//
+// const newArr = groupBy(a, "day")
+//
+// // console.log(newArr[1]);
+//
+// let finalArr = [];
+// for (let newArrKey in newArr) {
+//   // console.log(newArr[newArrKey])
+//   finalArr.push({
+//     id: newArr[newArrKey][0].month + " " + newArrKey,
+//     data: newArr[newArrKey].map(( arrObj ) => {
+//       return {
+//         x: arrObj.hour,
+//         y: arrObj.count
+//       }
+//     })
+//   })
+//
+// }
+//
+// console.log(finalArr)
+//
+// // const final = newArr.map(arrNum => {
+// //   return {
+// //     id: newArr[arrNum] + " " + arrNum,
+// //     data: newArr[arrNum].map(( arrObj ) => {
+// //       return {
+// //         x: arrObj.hour,
+// //         y: arrObj.count
+// //       }
+// //     })
+// //   }
+// // })
+//
+// // console.log(finalArr)
+//
+// function groupBy( arr, property ) {
+//   return arr.reduce(function ( memo, x ) {
+//     if (!memo[x[property]]) { memo[x[property]] = []; }
+//     memo[x[property]].push(x);
+//     return memo;
+//   }, {});
+// }
+//
 
 
-  return theList;
-}
-
-console.log(getRandomData())
+let date = new Date('2022-02-06T01:29:18.13')
+console.log(Date.now())
+console.log(Date.parse(new Date().toISOString()) - date);
