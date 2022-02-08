@@ -220,17 +220,17 @@ const Stats = ( {hourlyStats, regionStats, hourlyPerRegionStats} ) => {
 export async function getStaticProps() {
   // const hourlyStatsJson = await fetch('https://fantasea.pl/api/v1/planes/stats/hourly').then(res => res.json());
 
-  const promises =[]
+  const promises = []
   // [{"month":"February","day":2,"hour":0,"count":28600},{"month":"February","day":2,"hour":1,"count":25422}}
- // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
-promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
+  // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
+  promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/hourly?pastDays=1').then(res => res.json()));
   // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/planesregistered').then(res => res.json()))
-promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json()));
+  promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').then(res => res.json()));
   // http://localhost:5000/api/v1/planes/stats/hourlyperregion
   // promises.push(fetch('http://localhost:5000/api/v1/planes/stats/hourlyperregion').then(res => res.json()));
   promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/hourlyperregion').then(res => res.json()));
 
-  let [hourlyStatsJson, regionStatsJson,hourlyPerRegionStatsJson] = await Promise.all(promises);
+  let [hourlyStatsJson, regionStatsJson, hourlyPerRegionStatsJson] = await Promise.all(promises);
 
   // Geo Map data
   const regionStats = regionStatsJson.map(obj => {
@@ -271,9 +271,7 @@ promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').
             })
           }
       )
-
     }
-
   }
   let hourlyPerRegionStats = hourlyStats2
 
@@ -287,7 +285,6 @@ promises.push(fetch('https://fantasea.pl/api/v1/planes/stats/planesregistered').
   }
 }
 
-
 function groupBy( arr, property ) {
   return arr.reduce(function ( memo, x ) {
     if (!memo[x[property]]) { memo[x[property]] = []; }
@@ -295,8 +292,6 @@ function groupBy( arr, property ) {
     return memo;
   }, {});
 }
-
-
 
 
 export default Stats;
