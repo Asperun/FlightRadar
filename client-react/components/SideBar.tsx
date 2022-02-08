@@ -27,7 +27,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
         let timeSinceStart: string | undefined;
         let distanceSinceStart: number | undefined;
 
-        if (dbPlaneInfo.data && dbPlaneInfo.data.flights.length > 0) {
+        if (dbPlaneInfo.data && dbPlaneInfo.data.flights.length > 0 && dbPlaneInfo.data.flights[0].checkpoints) {
             const checkpoints = dbPlaneInfo.data.flights[0].checkpoints;
 
             timeSinceStart = convertSeconds(Math.floor(
