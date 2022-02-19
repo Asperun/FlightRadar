@@ -7,6 +7,8 @@ public abstract class Globals
 {
     public static readonly Coordinates NorthAmerica = new(-24.697266f, 34.524661f, 44.121094f, 71.718882f);
     public static readonly Coordinates Europe = new(-169.101563f, 16.636192f, -51.328125f, 73.277353f);
+    public static readonly List<Coordinates> GetAllRegions = new(2) { NorthAmerica, Europe };
+    public static string ConnectionString = "";
 }
 
 /// <summary>

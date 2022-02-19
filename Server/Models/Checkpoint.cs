@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace FlightRadar.Models;
@@ -10,7 +9,7 @@ namespace FlightRadar.Models;
 [Table("Checkpoints")]
 public class Checkpoint : EntityBase
 {
-    [Required] [JsonIgnore] public Flight Flight { get; set; } = null!;
+    [JsonIgnore] public Flight Flight { get; set; } = null!;
 
     [JsonIgnore] public int FlightId { get; set; }
 

@@ -34,7 +34,7 @@ public class PlanesFetcher : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Stats async tasks
+    ///     Stats async tasks
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns>Status of a task</returns>
@@ -48,7 +48,7 @@ public class PlanesFetcher : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Stops all tasks
+    ///     Stops all tasks
     /// </summary>
     /// <param name="stoppingToken"></param>
     /// <returns>Status of a task</returns>
@@ -60,33 +60,29 @@ public class PlanesFetcher : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Callback function used for updating current coordinates of a plane as delegate for post-fetching processing
+    ///     Callback function used for updating current coordinates of a plane as delegate for post-fetching processing
     /// </summary>
     /// <param name="planes">List of fetched planes</param>
     private async Task Callback_UpdatePlanes(List<Plane> planes)
     {
-        logger.LogWarning("Updating Planes");
         using var scope = services.CreateScope();
         var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
         await planeService.UpdatePlanes(planes);
-        logger.LogWarning("Updated Planes");
     }
 
     /// <summary>
-    /// Callback function used for updating checkpoints based on current coordinates as delegate for post-fetching processing
+    ///     Callback function used for updating checkpoints based on current coordinates as delegate for post-fetching processing
     /// </summary>
     /// <param name="planes">List of fetched planes</param>
     private async Task Callback_UpdateCheckpoints(List<Plane> planes)
     {
-        logger.LogWarning("Updating Checkpoints");
         using var scope = services.CreateScope();
         var planeService = scope.ServiceProvider.GetRequiredService<PlaneService>();
         await planeService.UpdateCheckpoints(planes);
-        logger.LogWarning("Updated Checkpoints");
     }
 
     /// <summary>
-    /// Used to fetch data from OpenSky Network and process it
+    ///     Used to fetch data from OpenSky Network and process it
     /// </summary>
     /// <param name="state"></param>
     /// <param name="callback">Callback delegate for post-fetching tasks</param>
@@ -115,7 +111,7 @@ public class PlanesFetcher : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Sends fetch request for OpenSky network API
+    ///     Sends fetch request for OpenSky network API
     /// </summary>
     /// <returns>Response</returns>
     private async Task<HttpResponseMessage> SendFetchRequest()
@@ -130,5 +126,8 @@ public class PlanesFetcher : IHostedService, IDisposable
         return await httpClient.SendAsync(httpRequestMessage);
     }
 
+    /// <summary>
+    /// Delegate task to perform after fetching aircraft
+    /// </summary>
     private delegate Task FetchCallback(List<Plane> planes);
 }

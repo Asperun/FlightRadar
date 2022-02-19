@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace FlightRadar.Models;
@@ -10,10 +9,8 @@ namespace FlightRadar.Models;
 [Table("Flights")]
 public class Flight : EntityBase
 {
-    [Required] [JsonIgnore] public Plane Plane { get; set; } = null!;
-
+    [JsonIgnore] public Plane Plane { get; set; } = null!;
     [JsonIgnore] public int PlaneId { get; set; }
-
     public bool IsCompleted { get; set; }
     public List<Checkpoint> Checkpoints { get; set; } = null!;
 

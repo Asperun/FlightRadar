@@ -1,17 +1,22 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using FlightRadar.Models;
 using FlightRadar.Services;
 using FlightRadar.Services.Events;
 using Microsoft.AspNetCore.Mvc;
-using static FlightRadar.Data.DTO.ResponseDto;
+using static FlightRadar.Data.Responses.ResponseDto;
 
 namespace FlightRadar.Controllers;
 
+/// <summary>
+///     Stats type used for controller mapping
+/// </summary>
 public enum StatsType
 {
     MainPage,
     Hourly,
+    HourlyPerRegion,
     Global,
     PlanesRegistered
 }
@@ -51,31 +56,41 @@ public class PlaneController : ControllerBase
     public async Task<ActionResult<Plane>> GetByIcao24(string? icao24, bool checkpoints = false)
     {
         if (icao24 == null) return BadRequest();
-        Console.WriteLine("GetByIcao24");
         var plane = await planeService.GetByIcao24Async(icao24, checkpoints);
         if (plane == null) return NotFound();
         return Ok(plane);
     }
 
 
-  /// <summary>
-  /// Handles stats fetching
-  /// </summary>
-  /// <param name="statsType">Enum of stats type to be fetched</param>
-  /// <returns>OK if fetched</returns>
+    /// <summary>
+    ///     Handles stats fetching
+    /// </summary>
+    /// <param name="statsType">Enum of stats type to be fetched</param>
+    /// <param name="pastDays">Amount of days to include in the past</param>
+    /// <returns>Stats with OK if success</returns>
     [HttpGet("stats/{statsType}")]
-    public async Task<ActionResult> GetSidePanelStats([FromRoute] StatsType statsType)
+    public async Task<ActionResult> GetStats([FromRoute] StatsType statsType, [FromQuery] int pastDays = 0)
     {
         switch (statsType)
         {
             case StatsType.Global:
-                var stats = planeService.GetGlobalStatsAsync();
+                var stats =  planeService.GetGlobalStatsAsync();
                 if (stats.TotalPlanes == 0) return NoContent();
                 return Ok(stats);
+
             case StatsType.Hourly:
-                return Ok(await planeService.GetHourlyAmountFromDate(DateTime.UtcNow));
+                var hourlyList = await planeService.GetHourlyAmountFromDate(DateTime.UtcNow, pastDays);
+                if (!hourlyList.Any()) return NoContent();
+                return Ok(hourlyList);
+
+            case StatsType.HourlyPerRegion:
+                var hourlyPerRegionList = await planeService.GetHourlyAmountFromDatePerRegion(DateTime.UtcNow, pastDays);
+                if (!hourlyPerRegionList.Any()) return NoContent();
+                return Ok(hourlyPerRegionList);
+
             case StatsType.PlanesRegistered:
                 return Ok(await planeService.GetRegisteredPerCountry());
+
             case StatsType.MainPage:
                 return Ok(await planeService.GetMainPageProjection());
             default:
@@ -137,19 +152,19 @@ public class PlaneController : ControllerBase
 
                 await Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"data: {planesJson}\n\n"), cancellationToken);
                 await Response.Body.FlushAsync(cancellationToken);
-                logger.LogWarning("Sent SSE to {ClientIp} on {Time} planes amount {PlanesAmount}",
-                                  Request.HttpContext.Connection.RemoteIpAddress?.ToString(),
-                                  DateTime.Now.Millisecond,
-                                  limitPlanes);
+                // logger.LogInformation("Sent SSE to {ClientIp} on {Time} planes amount {PlanesAmount}",
+                //                   Request.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                //                   DateTime.Now.Millisecond,
+                //                   limitPlanes);
             }
             catch (Exception)
             {
-                logger.LogError("Not able to send the notification");
+                logger.LogWarning("Not able to send the notification");
             }
         }
 
         planeBroadcaster.NotificationEvent += OnNotification;
-        logger.LogWarning("Client connected, total connections {CC}", planeBroadcaster.GetSubscribersCount());
+        logger.LogInformation("Client connected, total connections {CC}", planeBroadcaster.GetSubscribersCount());
 
         try
         {
@@ -160,12 +175,12 @@ public class PlaneController : ControllerBase
         }
         catch (TaskCanceledException)
         {
-            logger.LogWarning("User disconnected");
+            logger.LogInformation("User disconnected");
         }
         finally // Unsubscribe
         {
             planeBroadcaster.NotificationEvent -= OnNotification;
-            logger.LogWarning("Client disconnected, total connections {CC}",
+            logger.LogInformation("Client disconnected, total connections {CC}",
                               planeBroadcaster.GetSubscribersCount());
         }
     }

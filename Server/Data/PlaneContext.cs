@@ -20,9 +20,10 @@ public class PlaneContext : DbContext
 
 
     // === Projections ===
-    public virtual DbSet<HourAmountProjection> HourAmountProj { get; set; } = null!;
+    public virtual DbSet<DateAmountProjection> DateAmountProj { get; set; } = null!;
     public virtual DbSet<CountryAmountProjection> CountryAmountProj { get; set; } = null!;
-    public virtual DbSet<MainPageProjection> MainPageProj { get; set; } = null!;
+    public virtual DbSet<GeneralStatsProjection> GeneralStatsProj { get; set; } = null!;
+    public virtual DbSet<PlaneLastCheckpointProj> PlaneLastCheckpointProj { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,9 +40,11 @@ public class PlaneContext : DbContext
 
         modelBuilder.Entity<Checkpoint>().Property(eb => eb.CreationTime).HasDefaultValueSql("GETUTCDATE()");
 
-        // Projections
-        modelBuilder.Entity<HourAmountProjection>().HasNoKey();
+
+        // DB Projections
+        modelBuilder.Entity<DateAmountProjection>().HasNoKey();
         modelBuilder.Entity<CountryAmountProjection>().HasNoKey();
-        modelBuilder.Entity<MainPageProjection>().HasNoKey();
+        modelBuilder.Entity<GeneralStatsProjection>().HasNoKey();
+        modelBuilder.Entity<PlaneLastCheckpointProj>().HasNoKey();
     }
 }

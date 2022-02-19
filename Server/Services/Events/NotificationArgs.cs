@@ -1,4 +1,4 @@
-﻿using static FlightRadar.Data.DTO.ResponseDto;
+﻿using static FlightRadar.Data.Responses.ResponseDto;
 
 namespace FlightRadar.Services.Events;
 

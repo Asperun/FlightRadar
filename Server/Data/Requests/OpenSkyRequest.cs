@@ -4,34 +4,41 @@ using FlightRadar.Models;
 namespace FlightRadar.Data.Requests;
 
 /// <summary>
-/// OpenSky Api request projection class
+///     OpenSky Api request projection class
 /// </summary>
 public sealed class OpenSkyRequest
 {
+    /// <summary>
+    /// Timestamp of fetch
+    /// </summary>
     public int time { get; set; }
+    
+    /// <summary>
+    /// Vector states
+    /// </summary>
     public JsonElement[][] states { get; set; } = null!;
 
     /// <summary>
-    /// Converts response to model list
+    ///     Converts response to model list
     /// </summary>
     /// <returns>List of aircraft according to model</returns>
     public List<Plane> ToModelList()
     {
         var planeList = (from state in states
-                         where state[States.Longitude].ValueKind != JsonValueKind.Null && state[States.Latitude].ValueKind != JsonValueKind.Null
+                         where state[VState.Longitude].ValueKind != JsonValueKind.Null && state[VState.Latitude].ValueKind != JsonValueKind.Null
                          select new Plane
                          {
-                             Icao24 = state[States.Icao24].GetString()!,
-                             CallSign = state[States.CallSign].GetString()?.TrimEnd(),
-                             RegCountry = state[States.OriginCountry].GetString(),
-                             Longitude = state[States.Longitude].GetSingle(),
-                             Latitude = state[States.Latitude].GetSingle(),
-                             OnGround = state[States.OnGround].GetBoolean(),
-                             Velocity = state[States.Velocity].ValueKind != JsonValueKind.Null ? state[States.Velocity].GetSingle() : -1,
-                             TrueTrack = state[States.TrueTrack].ValueKind != JsonValueKind.Null ? state[States.TrueTrack].GetSingle() : -1,
-                             VerticalRate = state[States.VerticalRate].ValueKind != JsonValueKind.Null ? state[States.VerticalRate].GetSingle() : -1,
-                             GeoAltitude = state[States.BaroAltitude].ValueKind != JsonValueKind.Null ? state[States.BaroAltitude].GetSingle() : -1,
-                             LastContact = Math.Max(0, state[States.LastContact].GetInt32() - state[States.TimePosition].GetInt32())
+                             Icao24 = state[VState.Icao24].GetString()!,
+                             CallSign = state[VState.CallSign].GetString()?.TrimEnd(),
+                             RegCountry = state[VState.OriginCountry].GetString(),
+                             Longitude = state[VState.Longitude].GetSingle(),
+                             Latitude = state[VState.Latitude].GetSingle(),
+                             OnGround = state[VState.OnGround].GetBoolean(),
+                             Velocity = state[VState.Velocity].ValueKind != JsonValueKind.Null ? state[VState.Velocity].GetSingle() : -1,
+                             TrueTrack = state[VState.TrueTrack].ValueKind != JsonValueKind.Null ? state[VState.TrueTrack].GetSingle() : -1,
+                             VerticalRate = state[VState.VerticalRate].ValueKind != JsonValueKind.Null ? state[VState.VerticalRate].GetSingle() : -1,
+                             GeoAltitude = state[VState.BaroAltitude].ValueKind != JsonValueKind.Null ? state[VState.BaroAltitude].GetSingle() : -1,
+                             LastContact = state[VState.LastContact].GetInt32()
                          })
                         .OrderBy(p => p.Icao24)
                         .ToList();
@@ -39,7 +46,10 @@ public sealed class OpenSkyRequest
         return planeList;
     }
 
-    private abstract class States
+    /// <summary>
+    ///     Vector states used by OpenSky Api
+    /// </summary>
+    private abstract class VState
     {
         public const byte
             Icao24 = 0,

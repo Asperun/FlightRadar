@@ -1,6 +1,6 @@
 ﻿using FlightRadar.Models;
 using FlightRadar.Services.Events;
-using static FlightRadar.Data.DTO.ResponseDto;
+using static FlightRadar.Data.Responses.ResponseDto;
 
 namespace FlightRadar.Services;
 
@@ -15,10 +15,11 @@ public class PlaneBroadcaster
     ///     Updates memory list of aircraft and publishes it to subscribers
     /// </summary>
     /// <param name="planes">List of aircraft</param>
-    public void UpdateAndPublish(IEnumerable<Plane> planes)
+    public void Publish(IEnumerable<Plane> planes)
     {
         NotificationEvent?.Invoke(this, new NotificationArgs(planes.Select(plane =>
-                                                                               new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))));
+                                                                               new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude,
+                                                                                                plane.TrueTrack))));
     }
 
     /// <summary>
