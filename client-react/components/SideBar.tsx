@@ -10,7 +10,7 @@ interface Props {
     setSelectedPlane: any;
 }
 
-const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props) => {
+const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props):JSX.Element => {
 
     if (plane) {
         return <RenderPlaneSidebar />

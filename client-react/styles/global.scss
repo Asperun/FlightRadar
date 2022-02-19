@@ -2,12 +2,19 @@
 @import "~tailwindcss/components";
 @import "~tailwindcss/utilities";
 
-
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
+.font-roboto {
+  font-family: 'Roboto', sans-serif;
+}
+
+.bg-blur {
+  backdrop-filter: blur(12px);
+  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 1));
+}
+
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
@@ -47,9 +54,5 @@
 }
 
 .fade-to-right {
-  //background-image: url('https://hatscripts.github.io/circle-flags/flags/pl.svg');
   mask-image: linear-gradient(to right, rgba(0, 0, 0, 1.0) 50%, transparent 100%);
-  //background-image: url(https://hatscripts.github.io/circle-flags/flags/pl.svg),linear-gradient(to right, rgba(1,1,1,1), rgba(1,1,1,0));
-  //background: linear-gradient(to right, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 1)), url(https://hatscripts.github.io/circle-flags/flags/pl.svg) no-repeat;
-  //background-size: contain;
 }

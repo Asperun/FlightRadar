@@ -6,12 +6,12 @@ import {memo, ReactElement, useMemo, useState} from "react";
 import ReactLeafletDriftMarker from "react-leaflet-drift-marker"
 import {Plane} from "../types/plane";
 
-interface Props {
+type Props ={
     plane: Plane
     setSelectedPlane: any;
 }
 
-const PlaneMarker = ({plane, setSelectedPlane}: Props) => {
+const PlaneMarker = ({plane, setSelectedPlane}: Props):JSX.Element => {
     const [tooltip, setTooltip] = useState<boolean>(false);
 
     // Only update icon if plane rotated more than 5 degree or has been selected
@@ -29,7 +29,8 @@ const PlaneMarker = ({plane, setSelectedPlane}: Props) => {
             />);
     }
 
-    return (<>
+    return (
+      <>
             {/*{console.log("%crerender", "color: red")}*/}
             <ReactLeafletDriftMarker
                 position={[plane.latitude, plane.longitude]}

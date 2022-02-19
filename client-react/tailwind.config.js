@@ -17,7 +17,7 @@ module.exports = {
         lato: ["Lato"],
       },
       colors: {
-        "dark1": "#0E1317"
+        dark:"#1A1A1A",
       }
     },
   },

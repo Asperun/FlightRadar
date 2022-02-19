@@ -1,7 +1,6 @@
 import {MapContainer, Polyline, TileLayer, useMapEvents,} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
-import * as React from "react";
 import {memo, ReactElement, useCallback, useReducer, useRef, useState} from "react";
 import SideBar from "./SideBar";
 import PlaneMarker from "./PlaneMarker";
@@ -9,7 +8,7 @@ import {useApiPlaneDetails} from "../utils/requestHelper";
 import {Plane} from "../types/plane";
 
 
-function MapNoSSR() {
+const InteractiveMap = ():JSX.Element => {
     const [selectedPlane, setSelectedPlane] = useState<Plane | null>(null);
     const [numPlanes, setNumPlanes] = useState<number>(400);
     const [_, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -42,7 +41,6 @@ function MapNoSSR() {
         if (!bounds) return;
 
         eventSource.current = new EventSource(`https://fantasea.pl/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
-        // eventSource.current = new EventSource(`http://localhost:5000/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
         eventSource.current.onmessage = processData;
     }
 
@@ -71,11 +69,7 @@ function MapNoSSR() {
     function renderPlanes() {
         return mapData.current.planes.map((plane: Plane, i: number) => {
                 return plane.callSign &&
-                    <PlaneMarker
-                        key={i}
-                        plane={plane}
-                        setSelectedPlane={updateSelectedPlane}
-                    />
+                    <PlaneMarker key={i} plane={plane} setSelectedPlane={updateSelectedPlane} />
             }
         );
     }
@@ -91,7 +85,7 @@ function MapNoSSR() {
 
     return (
         <div onContextMenu={(e) => e.preventDefault()}
-             className="flex flex-col h-full relative">
+             className="flex flex-col h-screen relative w-screen">
             <div className="basis-full">
                 <MapContainer center={[51.505, 19]}
                               zoom={7}
@@ -111,16 +105,17 @@ function MapNoSSR() {
                     {<LocationMarker />}
                     {renderPlanes()}
 
-                    {planeInfo && planeInfo.flights?.length > 0 && planeInfo.flights[0].checkpoints?.length > 0 && <Polyline positions={getPath()}
-                                                                                                                             pathOptions={{
-                                                                                                                                 interactive: false,
-                                                                                                                                 color: "lime",
-                                                                                                                                 bubblingMouseEvents: false,
-                                                                                                                                 smoothFactor: 1.0,
-                                                                                                                                 lineJoin: "round",
-                                                                                                                                 opacity: 0.8,
-                                                                                                                                 weight: 3
-                                                                                                                             }} />}
+                    {planeInfo && planeInfo.flights?.length > 0 && planeInfo.flights[0].checkpoints?.length > 0 &&
+                        <Polyline positions={getPath()}
+                                  pathOptions={{
+                                      interactive: false,
+                                      color: "lime",
+                                      bubblingMouseEvents: false,
+                                      smoothFactor: 1.0,
+                                      lineJoin: "round",
+                                      opacity: 0.8,
+                                      weight: 3
+                                  }} />}
                 </MapContainer>
                 <SideBar plane={selectedPlane}
                          setSelectedPlane={updateSelectedPlane}
@@ -132,10 +127,10 @@ function MapNoSSR() {
     )
 
     function getPath() {
-        const arr = planeInfo.flights[0].checkpoints.map((position, i) => [position.latitude, position.longitude]);
+        const arr = planeInfo.flights[0].checkpoints.map((position) => [position.latitude, position.longitude]);
         arr.push([planeInfo.latitude, planeInfo.longitude])
         return arr;
     }
 }
 
-export default MapNoSSR;
+export default InteractiveMap;
