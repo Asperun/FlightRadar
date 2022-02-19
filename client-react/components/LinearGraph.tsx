@@ -6,8 +6,7 @@ type Props = {
   width: number
 }
 
-const LinearGraph = ({data,width}:Props ) : JSX.Element => {
-  // @ts-ignore
+const LinearGraph = ({data, width}: Props): JSX.Element => {
   return (
     <Line
       width={width}

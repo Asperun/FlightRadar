@@ -14,7 +14,7 @@ const variants = {
   exit: {opacity: 0, x: 0, y: -100},
 }
 
-const Layout = ({children, title, description}: Props) : JSX.Element => {
+const Layout = ({children, title, description}: Props): JSX.Element => {
   return (
     <>
       <NextSeo title={title} description={description} openGraph={{title, description}} />

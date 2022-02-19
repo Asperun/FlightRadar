@@ -1,5 +1,4 @@
 import dynamic from "next/dynamic";
-import Head from "next/head";
 import * as React from "react";
 import {NextPage} from "next";
 import Layout from "../components/Layout";
@@ -11,7 +10,7 @@ const MapComponent = dynamic(() => import("../components/InteractiveMap"), {
 const title = "Map"
 const description = "Flight Tracker interactive map"
 
-const Map: NextPage = ():JSX.Element => {
+const Map: NextPage = (): JSX.Element => {
   return (
     <Layout title={title} description={description}>
       <MapComponent />

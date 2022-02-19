@@ -27,32 +27,32 @@ const Stats: NextPage = ({hourlyStats, regionStats, hourlyPerRegionStats}: Props
   return (
     <>
       <NavBar />
-    <Layout title={title} description={description}>
-      <div className={"w-full flex flex-col gap-12 mt-12 content-center justify-center"}>
-        <div className={"mx-auto"}>
-          <h1 className={"text-xl"}>Total unique aircraft recorded today</h1>
-          <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-            <LinearGraph data={hourlyStats} width={screenWidth} />
+      <Layout title={title}
+              description={description}>
+        <div className={"w-full flex flex-col gap-12 mt-12 content-center justify-center"}>
+          <div className={"mx-auto"}>
+            <h1 className={"text-xl"}>Total unique aircraft recorded today</h1>
+            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
+              <LinearGraph data={hourlyStats} width={screenWidth} />
+            </div>
+          </div>
+          <div className={"mx-auto"}>
+            <h1 className={"text-xl"}>Total unique aircraft across the regions recorded today</h1>
+            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
+              <LinearGraph data={hourlyPerRegionStats} width={screenWidth} />
+            </div>
+          </div>
+          <div className={"mx-auto mb-8"}>
+            <h1 className={"text-xl"}>Total aircraft registered per country</h1>
+            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
+              <GeoMap data={regionStats} width={screenWidth} />
+            </div>
           </div>
         </div>
-        <div className={"mx-auto"}>
-          <h1 className={"text-xl"}>Total unique aircraft across the regions recorded today</h1>
-          <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-            <LinearGraph data={hourlyPerRegionStats} width={screenWidth} />
-          </div>
-        </div>
-        <div className={"mx-auto mb-8"}>
-          <h1 className={"text-xl"}>Total aircraft registered per country</h1>
-          <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-            <GeoMap data={regionStats} width={screenWidth} />
-          </div>
-        </div>
-      </div>
-    </Layout>
-      </>
+      </Layout>
+    </>
   )
 }
-
 
 
 export default Stats;
@@ -76,7 +76,7 @@ export async function getStaticProps() {
 
   // Hourly total stats
   const hourlyGrouped = groupBy(hourlyStatsJson, "day");
-  let hourlyStats:LinearGraphData[] = [];
+  let hourlyStats: LinearGraphData[] = [];
   for (let newArrKey in hourlyGrouped) {
     hourlyStats.push(
       {
@@ -91,8 +91,8 @@ export async function getStaticProps() {
     )
   }
 
-  let hourlyStats2:LinearGraphData[] = [];
-  const regionNames:string[] = ["Europe", "North America"]
+  let hourlyStats2: LinearGraphData[] = [];
+  const regionNames: string[] = ["Europe", "North America"]
   for (let k = 0; k < hourlyPerRegionStatsJson.length; k++) {
     const grouped = groupBy(hourlyPerRegionStatsJson[k], "day");
     for (let newArrKey in grouped) {
@@ -113,7 +113,7 @@ export async function getStaticProps() {
   return {
     props: {
       hourlyStats,
-      hourlyPerRegionStats:hourlyStats2,
+      hourlyPerRegionStats: hourlyStats2,
       regionStats
     },
     revalidate: 7200, // 2hr in seconds

@@ -7,7 +7,7 @@ type Props = {
   toast: string;
 };
 
-const ToastButton = ({children,className,onClick,toast}: Props): JSX.Element => {
+const ToastButton = ({children, className, onClick, toast}: Props): JSX.Element => {
   const [text, setText] = useState<string | null>(null);
 
   const showToast = (e: React.MouseEvent): void => {
@@ -17,8 +17,7 @@ const ToastButton = ({children,className,onClick,toast}: Props): JSX.Element => 
 
   return (
     <div onClick={showToast}>
-      <button className={className}
-              onClick={onClick}>
+      <button className={className} onClick={onClick}>
         {text !== null && text || children}
       </button>
     </div>

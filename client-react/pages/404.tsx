@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {NextPage} from "next";
 import {NextRouter, useRouter} from "next/router";
 
-const ErrorPage: NextPage = ():JSX.Element => {
+const ErrorPage: NextPage = (): JSX.Element => {
   const [time, setTime] = useState<number>(5);
   const router: NextRouter = useRouter();
   useEffect(() => {

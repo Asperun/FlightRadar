@@ -8,7 +8,7 @@ export type Props = {
   width: number
 }
 
-const GeoMap = ( {data,width}:Props ) : JSX.Element => {
+const GeoMap = ({data, width}: Props): JSX.Element => {
   return (<ChoroplethCanvas
       height={450}
       width={width}

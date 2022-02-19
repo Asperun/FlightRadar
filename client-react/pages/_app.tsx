@@ -3,9 +3,10 @@ import "../styles/global.scss";
 import Head from "next/head";
 import {DefaultSeo} from "next-seo";
 import {AppProps} from "next/app";
+import {AnimatePresence} from "framer-motion";
 
 
-function MyApp( {Component, pageProps,router} :AppProps) {
+function MyApp({Component, pageProps, router}: AppProps) {
   const url = `https://fantasm.vercel.app${router.route}`
   return (
     <>
@@ -24,10 +25,10 @@ function MyApp( {Component, pageProps,router} :AppProps) {
         }}
         canonical={url}
       />
-      {/*<AnimatePresence exitBeforeEnter initial={true} onExitComplete={() => window.scrollTo(0, 0)}>*/}
+      {/*footer and navbar conditionally rendered in each component*/}
+      <AnimatePresence exitBeforeEnter initial={true} onExitComplete={() => window.scrollTo(0, 0)}>
         <Component {...pageProps} canonical={url} key={router.pathname} />
-      {/*</AnimatePresence>*/}
-      {/*<Footer/>*/}
+      </AnimatePresence>
     </>
   );
 }
