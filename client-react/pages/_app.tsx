@@ -25,7 +25,6 @@ function MyApp({Component, pageProps, router}: AppProps) {
         }}
         canonical={url}
       />
-      {/*footer and navbar conditionally rendered in each component*/}
       <AnimatePresence exitBeforeEnter initial={true} onExitComplete={() => window.scrollTo(0, 0)}>
         <Component {...pageProps} canonical={url} key={router.pathname} />
       </AnimatePresence>

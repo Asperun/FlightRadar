@@ -1,5 +1,4 @@
 import dynamic from "next/dynamic";
-import * as React from "react";
 import {NextPage} from "next";
 import Layout from "../components/Layout";
 

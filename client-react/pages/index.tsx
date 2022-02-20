@@ -3,21 +3,19 @@ import NavBar from "../components/NavBar";
 import {NextPage} from "next";
 import Layout from "../components/Layout";
 import Footer from "../components/Footer";
+import axios from "axios";
 
 const title = "Info"
 const description = "Main page for Flight Tracker"
 
-type Data = {
+type Props = {
   totalPlanes: number
   totalFlights: number
   totalCheckpoints: number
 }
 
-type Props = {
-  data: Data
-}
-
-const Index: NextPage = ({data}: Props): JSX.Element => {
+// const Index: NextPage = ({totalPlanes,totalFlights,totalCheckpoints}: Props): JSX.Element => {
+const Index: NextPage = ({data: {totalPlanes, totalFlights, totalCheckpoints}}: Props): JSX.Element => {
   return (
     <>
       <NavBar />
@@ -29,9 +27,9 @@ const Index: NextPage = ({data}: Props): JSX.Element => {
             <div className="border-white border-b-2 pb-4 w-1/2 sm:w-1/2 md:w-2/3 mx-auto opacity-80" />
             <p className="mt-6 text-xl md:mt-12 md:text-2xl text-center text-slate-300 tracking-wide">
               Currently
-              tracking <span className="text-sky-600 tracking-normal">{data.totalPlanes}</span> aircraft
-              with <span className="text-sky-600">{data.totalFlights}</span> flights
-              and <span className="text-sky-600">{data.totalCheckpoints}</span> checkpoints
+              tracking <span className="text-sky-600 tracking-normal">{totalPlanes}</span> aircraft
+              with <span className="text-sky-600">{totalFlights}</span> flights
+              and <span className="text-sky-600">{totalCheckpoints}</span> checkpoints
             </p>
             <div className="flex flex-col justify-center items-center min-w-full gap-2 sm:flex-row my-2">
               <Link href="/map">
@@ -52,7 +50,8 @@ const Index: NextPage = ({data}: Props): JSX.Element => {
 };
 
 export async function getStaticProps() {
-  const data = await fetch('https://fantasea.pl/api/v1/planes/stats/mainpage').then(res => res.json());
+  const data = await axios.get('https://fantasea.pl/api/v1/planes/stats/mainpage').then(res => res.data)
+  console.log(data)
   return {
     props: {
       data

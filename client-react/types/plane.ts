@@ -1,6 +1,6 @@
-export interface Plane {
+export type Plane = {
   icao24: string
-  callSign?: string | null
+  callSign?: string
   trueTrack: number
   latitude: number
   longitude: number
