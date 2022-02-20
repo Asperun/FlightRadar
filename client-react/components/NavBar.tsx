@@ -23,9 +23,6 @@ const NavBar = (): JSX.Element => {
     <button onClick={() => handleClick("/stats")} className={activeTab === "/stats" ? getActiveClassName : getInActiveClassName}>
       <Link href="/stats">Stats</Link>
     </button>
-    <button onClick={() => handleClick("/about")} className={activeTab === "/about" ? getActiveClassName : getInActiveClassName}>
-      <Link href="/about">About</Link>
-    </button>
   </div>);
 
   function handleClick(tabName: string): void {
