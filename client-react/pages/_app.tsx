@@ -6,6 +6,7 @@ import {AppProps} from "next/app";
 import {AnimatePresence} from "framer-motion";
 
 
+
 function MyApp({Component, pageProps, router}: AppProps) {
   const url = `https://fantasm.vercel.app${router.route}`
   return (
