@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Data;
 using System.Diagnostics;
 using EFCore.BulkExtensions;
 using FlightRadar.Data;
@@ -7,8 +6,6 @@ using FlightRadar.Data.Projections;
 using FlightRadar.Models;
 using FlightRadar.Util;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.VisualBasic;
 using static FlightRadar.Data.Responses.ResponseDto;
 
 namespace FlightRadar.Services;
@@ -19,10 +16,10 @@ namespace FlightRadar.Services;
 public class PlaneService
 {
     private const float turnRadiusThreshold = 25f;
+    private static List<Plane> memoryPlaneList = new();
     private readonly ILogger<PlaneService> logger;
     private readonly PlaneBroadcaster planeBroadcaster;
     private readonly PlaneContext planeContext;
-    private static List<Plane> memoryPlaneList = new();
 
     public PlaneService(PlaneContext planeContext, PlaneBroadcaster planeBroadcaster, ILogger<PlaneService> logger)
     {
@@ -106,16 +103,7 @@ public class PlaneService
             foreach (var coordinates in Globals.GetAllRegions)
             {
                 returnList.Add(await planeContext.DateAmountProj
-                                                 .FromSqlInterpolated(@$"
-                                            Select DATEPART(Day, CreationTime)   as Day,
-                                           DATENAME(Month, CreationTime) as Month,
-                                           DATEPART(HOUR, CreationTime)  as Hour,
-                                           Count(distinct FlightId)      as Count
-                                            from Checkpoints where CreationTime BETWEEN {startDate} and {dateUtc}
-                                              and Longitude Between {coordinates.MinLon} and {coordinates.MaxLon}
-                                              and Latitude between {coordinates.MinLat} and {coordinates.MaxLat}
-                                            Group By DATENAME(Month, CreationTime), DATEPART(Day, CreationTime), DatePART(HOUR, CreationTime)
-                                            Order BY DATENAME(Month, CreationTime), DATEPART(Day, CreationTime), DatePART(HOUR, CreationTime)")
+                                                 .FromSqlInterpolated($"Select DATE_PART('Day', creationtime)::integer as \"Day\", TRIM(TRAILING FROM to_char (creationtime, 'Month')) as \"Month\", DATE_PART('HOUR', creationtime)::integer  as \"Hour\", Count(distinct flightid)::integer     as \"Count\" from checkpoints where creationtime BETWEEN {startDate} and {dateUtc} and longitude Between {coordinates.MinLon} and {coordinates.MaxLon} and latitude between {coordinates.MinLat} and {coordinates.MaxLat} Group By to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime) Order BY to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime)")
                                                  .AsNoTracking()
                                                  .ToListAsync()
                               );
@@ -164,17 +152,13 @@ public class PlaneService
         try
         {
             if (withCheckpoints)
-            {
                 plane = await planeContext.Planes
                                           .AsNoTracking()
                                           .Include(p => p.Flights.Where(f => !f.IsCompleted))
                                           .ThenInclude(f => f.Checkpoints)
                                           .FirstAsync(p => p.Icao24.Equals(icao24));
-            }
             else
-            {
                 plane = await planeContext.Planes.AsNoTracking().FirstAsync(p => p.Icao24.Equals(icao24));
-            }
         }
         catch (Exception e)
         {
@@ -235,15 +219,12 @@ public class PlaneService
         try
         {
             if (memoryPlaneList.Any())
-            {
                 planes = memoryPlaneList
                          .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
                          .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat && plane.Longitude >= minLong && plane.Longitude <= maxLong)
                          .Take(maxPlanes)
                          .ToList();
-            }
             else
-            {
                 planes = planeContext.Planes
                                      .AsNoTracking()
                                      .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
@@ -251,7 +232,6 @@ public class PlaneService
                                                      plane.Longitude <= maxLong)
                                      .Take(maxPlanes)
                                      .ToList();
-            }
         }
         catch (Exception e)
         {
@@ -281,32 +261,34 @@ public class PlaneService
         // 3. Pull new context from pool, do this because main context might be used
         planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
 
-        await using (var transaction = await planeContext.Database.BeginTransactionAsync())
+        // await using (var transaction = await planeContext.Database.BeginTransactionAsync())
+        // {
+        try
         {
-            try
+            await planeContext.BulkInsertOrUpdateAsync(planes, new BulkConfig
             {
-                await planeContext.BulkInsertOrUpdateAsync(planes, new BulkConfig
-                {
-                    // UniqueTableNameTempDb = true,
-                    // UseTempDB = true,
-                    UpdateByProperties = new List<string>(1) { nameof(Plane.Icao24) },
-                    PropertiesToExcludeOnUpdate = new List<string>(2) { nameof(Plane.Icao24), nameof(Plane.RegCountry) },
-                    BatchSize = 3000,
-                    TrackingEntities = false,
-                    WithHoldlock = false
-                });
+                // UniqueTableNameTempDb = true,
+                // UseTempDB = true,
+                UpdateByProperties = new List<string>(1) { nameof(Plane.Icao24) }
+                //     // PropertiesToExcludeOnUpdate = new List<string>(2) { nameof(Plane.Icao24), nameof(Plane.RegCountry) },
+                //     // BatchSize = 3000,
+                //     // TrackingEntities = false,
+                //     // WithHoldlock = false
+            });
 
-                await transaction.CommitAsync();
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning("{Message}", e.Message);
-            }
-            finally
-            {
-                await transaction.DisposeAsync();
-            }
+            // await planeContext.Planes.AddRangeAsync(planes);
+            // await planeContext.SaveChangesAsync();
+            // await transaction.CommitAsync();
         }
+        catch (Exception e)
+        {
+            logger.LogWarning("{Message}", e.Message);
+        }
+        //     finally
+        //     {
+        //         await transaction.DisposeAsync();
+        //     }
+        // }
 
         stopwatch.Stop();
         logger.LogInformation("Updated planes in={Time}", stopwatch.ElapsedMilliseconds);
@@ -411,12 +393,10 @@ public class PlaneService
                             }
 
                             if (Math.Abs(dbPlane.LastCheckpointTrueTrack.Value - memoryPlane.TrueTrack) > turnRadiusThreshold)
-                            {
                                 // turned 35 degree since last checkpoint
                                 // Console.WriteLine("updating CP with flightId=" + dbPlane.FlightId);
                                 // planeContext.Checkpoints.FromSqlInterpolated(@$"Insert Into Checkpoints(FlightId,TrueTrack,Velocity,Latitude,Longitude,Altitude) Values ({dbPlane.FlightId},{checkpoint.TrueTrack},{checkpoint.Velocity},{checkpoint.Latitude},{checkpoint.Longitude},{checkpoint.Altitude})").;
                                 planeContext.Checkpoints.Add(checkpoint);
-                            }
 
                             break;
                         }
@@ -424,9 +404,6 @@ public class PlaneService
                         {
                             continue;
                         }
-                        default:
-                            // logger.LogWarning("Couldn't resolve case in @" + nameof(UpdateCheckpoints));
-                            break;
                     }
                 }
 
@@ -436,9 +413,9 @@ public class PlaneService
                 {
                     await planeContext.BulkSaveChangesAsync(new BulkConfig
                     {
-                        WithHoldlock = false,
-                        TrackingEntities = false,
-                        BatchSize = 3000
+                        // WithHoldlock = false,
+                        // TrackingEntities = false,
+                        // BatchSize = 3000
                     });
                 }
                 catch (Exception e)
