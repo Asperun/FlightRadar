@@ -2,11 +2,16 @@ import {Line} from "@nivo/line";
 import {LinearGraphData} from "../types/graph";
 
 type Props = {
-  data: LinearGraphData[]
-  width: number
+  data?: LinearGraphData[];
+  width: number;
 }
 
-const LinearGraph = ({data, width}: Props): JSX.Element => {
+const LinearGraph = ({data, width}: Props): JSX.Element | null => {
+
+  if(!data){
+    return null;
+  }
+
   return (
     <Line
       width={width}

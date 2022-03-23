@@ -7,7 +7,7 @@ const NavBar = (): JSX.Element => {
   const getActiveClassName: string = "hover:opacity-100 text-orange-400 transition-colors duration-200 ease-linear text-md border-b-2 border-orange-400";
 
   useEffect(() => {
-    setActiveTab(window.location.pathname)
+    setActiveTab(window.location.pathname);
   }, [])
 
   return (<div className="flex opacity-80

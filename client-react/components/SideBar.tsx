@@ -4,7 +4,7 @@ import {convertCountryToAlpha2Code} from "../utils/countryUtils";
 import {Plane} from "../types/plane";
 
 interface Props {
-  plane: Plane
+  plane: Plane;
   totalPlanes: number;
   setSelectedPlane: any;
 }
@@ -208,7 +208,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane}: Props): JSX.Element => 
 
 function areEqual(prevProps: Props, nextProps: Props): boolean {
   if (!prevProps.plane && !nextProps.plane) {
-    return prevProps.totalPlanes === nextProps.totalPlanes
+    return prevProps.totalPlanes === nextProps.totalPlanes;
   }
   return prevProps.plane?.icao24 === nextProps.plane?.icao24 || prevProps.plane?.trueTrack === nextProps.plane?.trueTrack;
 }

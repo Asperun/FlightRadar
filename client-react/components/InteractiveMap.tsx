@@ -4,7 +4,7 @@ import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import {memo, ReactElement, useCallback, useReducer, useRef, useState} from "react";
 import SideBar from "./SideBar";
 import PlaneMarker from "./PlaneMarker";
-import {useApiPlaneDetails} from "../utils/requestHelper";
+import {subscribeToPlaneUpdates, useApiPlaneDetails} from "../utils/requestHelper";
 import {Plane} from "../types/plane";
 
 
@@ -40,7 +40,7 @@ const InteractiveMap = (): JSX.Element => {
     const bounds = mapRef.current?.getBounds();
     if (!bounds) return;
 
-    eventSource.current = new EventSource(`https://fantasea.pl/api/v1/planes/subscribeToPlanes?minLat=${bounds.getSouthWest().lat}&minLong=${bounds.getSouthWest().lng}&maxLat=${bounds.getNorthEast().lat}&maxLong=${bounds.getNorthEast().lng}&limitPlanes=${numPlanes}`);
+    eventSource.current = subscribeToPlaneUpdates(bounds.getSouthWest().lat,bounds.getSouthWest().lng,bounds.getNorthEast().lat,bounds.getNorthEast().lng,numPlanes)
     eventSource.current.onmessage = processData;
   }
 
@@ -116,7 +116,9 @@ const InteractiveMap = (): JSX.Element => {
                           weight: 3
                         }} />}
         </MapContainer>
-        <SideBar plane={selectedPlane} setSelectedPlane={updateSelectedPlane} totalPlanes={mapData.current.amountReceived}
+        <SideBar plane={selectedPlane}
+                 setSelectedPlane={updateSelectedPlane}
+                 totalPlanes={mapData.current.amountReceived}
         />
       </div>
 

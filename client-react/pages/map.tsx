@@ -1,17 +1,16 @@
 import dynamic from "next/dynamic";
-import {NextPage} from "next";
 import Layout from "../components/Layout";
 
 const MapComponent = dynamic(() => import("../components/InteractiveMap"), {
   ssr: false,
 });
 
-const title = "Map"
-const description = "Flight Tracker interactive map"
+const title = "Map - Flight Tracker";
+const description = "Flight Tracker interactive map";
 
-const Map: NextPage = (): JSX.Element => {
+const Map = (): JSX.Element => {
   return (
-    <Layout title={title} description={description}>
+    <Layout title={title} description={description} dontAnimate={true}>
       <MapComponent />
     </Layout>
   );

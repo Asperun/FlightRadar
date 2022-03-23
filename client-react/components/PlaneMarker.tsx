@@ -7,7 +7,7 @@ import ReactLeafletDriftMarker from "react-leaflet-drift-marker"
 import {Plane} from "../types/plane";
 
 type Props = {
-  plane: Plane
+  plane: Plane;
   setSelectedPlane: any;
 }
 

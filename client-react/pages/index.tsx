@@ -1,5 +1,3 @@
-import {NextPage} from "next";
-import axios from "axios";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import Link from "next/link";
@@ -8,26 +6,23 @@ import {RiArrowDownSLine, RiArrowUpSLine} from "react-icons/ri"
 import Scroll from "react-scroll"
 import Layout from "../components/Layout";
 import {useEffect} from "react";
+import {getMainStats} from "../utils/requestHelper";
 
-const title = "Info"
-const description = "Main page for Flight Tracker"
-
+const title = "Flight Tracker";
+const description = "Main page for Flight Tracker";
 
 type Props = {
-  totalPlanes: number
-  totalFlights: number
-  totalCheckpoints: number
+  data : { totalPlanes:number, totalFlights:number,totalCheckpoints:number}
 }
 
-const Index: NextPage = ({data: {totalPlanes, totalFlights, totalCheckpoints}}: Props): JSX.Element => {
+const Index = ({data}: Props): JSX.Element => {
 
   useEffect(() => {
-      document.body.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'auto'
+      document.body.style.overflow = 'auto';
     };
   }, []);
-
 
   return (
     <Layout title={title} description={description}>
@@ -44,9 +39,9 @@ const Index: NextPage = ({data: {totalPlanes, totalFlights, totalCheckpoints}}: 
             <div className="border-white border-b-2 pb-4 w-1/2 sm:w-1/2 md:w-2/3 mx-auto opacity-80" />
             <p className="bg-dark-el-1 rounded-xl mt-6 text-xl md:text-2xl text-slate-300 tracking-wide p-3">
               Currently
-              tracking <span className="text-sky-600 tracking-normal">{totalPlanes}</span> aircraft
-              with <span className="text-sky-600">{totalFlights}</span> flights
-              and <span className="text-sky-600">{totalCheckpoints}</span> checkpoints
+              tracking <span className="text-sky-600 tracking-normal">{data?.totalPlanes ?? 0}</span> aircraft
+              with <span className="text-sky-600">{data?.totalFlights ?? 0}</span> flights
+              and <span className="text-sky-600">{data?.totalCheckpoints ?? 0}</span> checkpoints
               across <span className="text-sky-600">2</span> regions
             </p>
             <div className={"p-4 mt-4"}>
@@ -58,12 +53,14 @@ const Index: NextPage = ({data: {totalPlanes, totalFlights, totalCheckpoints}}: 
             </div>
           </div>
           <button onClick={() => scrollTo("bottom")}>
-            <RiArrowDownSLine size={48} className={"opacity-70 hover:opacity-100 hover:scale-125 hover:-translate-y-2 transition-all duration-300 ease-out"} />
+            <RiArrowDownSLine size={48}
+                              className={"opacity-70 hover:opacity-100 hover:scale-125 hover:-translate-y-2 transition-all duration-300 ease-out"} />
           </button>
         </div>
         <div className={"w-full h-screen flex flex-col justify-between items-center"}>
           <button onClick={() => scrollTo("top")}>
-            <RiArrowUpSLine size={48} className={"opacity-70 hover:opacity-100 hover:scale-125 hover:translate-y-2 transition-all duration-300 ease-out"} />
+            <RiArrowUpSLine size={48}
+                            className={"opacity-70 hover:opacity-100 hover:scale-125 hover:translate-y-2 transition-all duration-300 ease-out"} />
           </button>
           <div>
             <div className={"container max-w-3xl rounded-xl bg-dark-el-1 p-6"}>
@@ -85,24 +82,31 @@ const Index: NextPage = ({data: {totalPlanes, totalFlights, totalCheckpoints}}: 
 };
 
 function scrollTo(direction: string): void {
-  const scroll = Scroll.animateScroll
+  const scroll = Scroll.animateScroll;
   const options = {duration: 1250, smooth: true}
 
   switch (direction.toLowerCase()) {
     case "top":
       return scroll.scrollToTop(options);
     case "bottom":
-      return scroll.scrollToBottom(options)
+      return scroll.scrollToBottom(options);
   }
 }
 
 export async function getStaticProps() {
-  const data = await axios.get('https://fantasea.pl/api/v1/planes/stats/mainpage').then(res => res.data)
+  let data;
+  try {
+    data = await getMainStats().then(res => res.data);
+  } catch (e:any) {
+    data = null;
+    console.log(e.message);
+  }
+
   return {
     props: {
       data
     },
-    revalidate: 7200,
+    revalidate: 3600
   }
 }
 

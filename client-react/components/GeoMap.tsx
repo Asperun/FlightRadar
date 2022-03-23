@@ -4,11 +4,16 @@ import {GeoGraphData} from "../types/graph";
 
 
 export type Props = {
-  data: GeoGraphData[]
-  width: number
+  data?: GeoGraphData[];
+  width: number;
 }
 
-const GeoMap = ({data, width}: Props): JSX.Element => {
+const GeoMap = ({data, width}: Props): JSX.Element | null => {
+
+  if(!data){
+    return null;
+  }
+
   return (<ChoroplethCanvas
       height={450}
       width={width}

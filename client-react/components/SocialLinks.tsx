@@ -27,7 +27,7 @@ const SocialLinks = (): JSX.Element => {
 }
 
 function redirectTo(site: string): void {
-  location.href = site
+  location.href = site;
 }
 
 async function copyValue(event: React.MouseEvent): Promise<any> {
@@ -36,7 +36,7 @@ async function copyValue(event: React.MouseEvent): Promise<any> {
     await navigator.clipboard.writeText(event.target.innerText);
   } catch (e: unknown) {
     if (e instanceof Error) {
-      console.log("Exception while copying value:", e.message)
+      console.log("Exception while copying value:", e.message);
     }
   }
 }
