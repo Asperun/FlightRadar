@@ -127,7 +127,7 @@ public class PlanesFetcher : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Delegate task to perform after fetching aircraft
+    ///     Delegate task to perform after fetching aircraft
     /// </summary>
     private delegate Task FetchCallback(List<Plane> planes);
 }

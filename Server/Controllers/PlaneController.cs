@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using FlightRadar.Models;
 using FlightRadar.Services;
@@ -14,17 +13,17 @@ namespace FlightRadar.Controllers;
 /// </summary>
 public enum StatsType
 {
-    MainPage,
+    Main,
     Hourly,
     HourlyPerRegion,
     Global,
-    PlanesRegistered
+    Registered
 }
 
 /// <summary>
 ///     REST controller class for aircraft related requests
 /// </summary>
-[Route("api/v1/planes")]
+[Route("v1/planes")]
 [ApiController]
 public class PlaneController : ControllerBase
 {
@@ -74,7 +73,7 @@ public class PlaneController : ControllerBase
         switch (statsType)
         {
             case StatsType.Global:
-                var stats =  planeService.GetGlobalStatsAsync();
+                var stats = planeService.GetGlobalStatsAsync();
                 if (stats.TotalPlanes == 0) return NoContent();
                 return Ok(stats);
 
@@ -88,10 +87,10 @@ public class PlaneController : ControllerBase
                 if (!hourlyPerRegionList.Any()) return NoContent();
                 return Ok(hourlyPerRegionList);
 
-            case StatsType.PlanesRegistered:
+            case StatsType.Registered:
                 return Ok(await planeService.GetRegisteredPerCountry());
 
-            case StatsType.MainPage:
+            case StatsType.Main:
                 return Ok(await planeService.GetMainPageProjection());
             default:
                 return BadRequest();
@@ -108,21 +107,22 @@ public class PlaneController : ControllerBase
     /// <param name="limitPlanes">Amount limit</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [Produces("text/event-stream")]
-    [HttpGet("subscribeToPlanes")]
+    [HttpGet("subscribe")]
     public async Task Subscribe([FromQuery] float minLat, [FromQuery] float minLong,
                                 [FromQuery] float maxLat, [FromQuery] float maxLong,
-                                [FromQuery] short limitPlanes, CancellationToken cancellationToken)
+                                [FromQuery] short limit, CancellationToken cancellationToken)
     {
         // Headers
         Response.Headers.Add("Content-Type", "text/event-stream");
         Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
+        Response.Headers.Add("X-Accel-Buffering", "no");
         // Response.Headers.Add("Transer-Encoding", "chunked");
 
 
         // Gets planes based on passed coordinates
         var initialPlanesJson =
             JsonSerializer
-                .Serialize(new { Planes = planeService.GetInAreaAsync(minLat, minLong, maxLat, maxLong, limitPlanes) },
+                .Serialize(new { Planes = planeService.GetInAreaAsync(minLat, minLong, maxLat, maxLong, limit) },
                            jsonSerializerOptions);
 
 
@@ -144,7 +144,7 @@ public class PlaneController : ControllerBase
                 else
                     planesFiltered = eventArgs.Planes;
 
-                if (limitPlanes > 0) planesFiltered = planesFiltered.Take(limitPlanes);
+                if (limit > 0) planesFiltered = planesFiltered.Take(limit);
 
                 var planesJson =
                     JsonSerializer.Serialize(new { Planes = planesFiltered, Total = eventArgs.Planes.Count() },
@@ -181,7 +181,7 @@ public class PlaneController : ControllerBase
         {
             planeBroadcaster.NotificationEvent -= OnNotification;
             logger.LogInformation("Client disconnected, total connections {CC}",
-                              planeBroadcaster.GetSubscribersCount());
+                                  planeBroadcaster.GetSubscribersCount());
         }
     }
 }

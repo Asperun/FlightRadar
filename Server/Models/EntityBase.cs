@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace FlightRadar.Models;
@@ -8,5 +9,5 @@ namespace FlightRadar.Models;
 /// </summary>
 public abstract class EntityBase
 {
-    [Key] [JsonIgnore] public int Id { get; set; }
+    [Key] [JsonIgnore] [Column("id")] public int Id { get; set; }
 }

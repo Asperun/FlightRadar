@@ -9,12 +9,12 @@ namespace FlightRadar.Data.Requests;
 public sealed class OpenSkyRequest
 {
     /// <summary>
-    /// Timestamp of fetch
+    ///     Timestamp of fetch
     /// </summary>
     public int time { get; set; }
-    
+
     /// <summary>
-    /// Vector states
+    ///     Vector states
     /// </summary>
     public JsonElement[][] states { get; set; } = null!;
 

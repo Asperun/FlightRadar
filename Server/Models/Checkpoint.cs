@@ -6,20 +6,24 @@ namespace FlightRadar.Models;
 /// <summary>
 ///     Model class for Checkpoint entity
 /// </summary>
-[Table("Checkpoints")]
+[Table("checkpoints")]
 public class Checkpoint : EntityBase
 {
     [JsonIgnore] public Flight Flight { get; set; } = null!;
 
-    [JsonIgnore] public int FlightId { get; set; }
+    [JsonIgnore] [Column("flightid")] public int FlightId { get; set; }
+    [Column("creationtime")] public DateTime? CreationTime { get; set; }
+    [Column("longitude")] public float Longitude { get; set; }
 
-    public DateTime? CreationTime { get; set; }
-    public float Longitude { get; set; }
-    public float Latitude { get; set; }
-    public float Velocity { get; set; }
-    public float Altitude { get; set; }
-    public float TrueTrack { get; set; }
-    public float VerticalRate { get; set; }
+    [Column("latitude")] public float Latitude { get; set; }
+
+    [Column("velocity")] public float Velocity { get; set; }
+
+    [Column("altitude")] public float Altitude { get; set; }
+
+    [Column("truetrack")] public float TrueTrack { get; set; }
+
+    [Column("verticalrate")] public float VerticalRate { get; set; }
 
     public override string ToString()
     {

@@ -6,22 +6,25 @@ namespace FlightRadar.Models;
 /// <summary>
 ///     Model class for Plane entity
 /// </summary>
-[Table("Planes")]
+[Table("planes")]
 public class Plane : EntityBase
 {
-    [MaxLength(6)] [Required] public string Icao24 { get; set; } = null!;
+    [MaxLength(6)]
+    [Required]
+    [Column("icao24")]
+    public string Icao24 { get; set; } = null!;
 
-    [MaxLength(8)] public string? CallSign { get; set; }
+    [MaxLength(8)] [Column("callsign")] public string? CallSign { get; set; }
 
-    public int LastContact { get; set; }
-    public float Longitude { get; set; }
-    public float Latitude { get; set; }
-    public bool OnGround { get; set; }
-    public float Velocity { get; set; }
-    public float TrueTrack { get; set; }
-    public float VerticalRate { get; set; }
-    public float GeoAltitude { get; set; }
-    public string RegCountry { get; set; } = null!;
+    [Column("lastcontact")] public int LastContact { get; set; }
+    [Column("longitude")] public float Longitude { get; set; }
+    [Column("latitude")] public float Latitude { get; set; }
+    [Column("onground")] public bool OnGround { get; set; }
+    [Column("velocity")] public float Velocity { get; set; }
+    [Column("truetrack")] public float TrueTrack { get; set; }
+    [Column("verticalrate")] public float VerticalRate { get; set; }
+    [Column("geoaltitude")] public float GeoAltitude { get; set; }
+    [Column("regcountry")] public string RegCountry { get; set; } = null!;
     public List<Flight> Flights { get; set; } = null!;
 
     public override string ToString()

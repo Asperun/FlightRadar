@@ -38,9 +38,8 @@ public class PlaneContext : DbContext
                     .WithOne(c => c.Flight)
                     .HasForeignKey(c => c.FlightId);
 
-        modelBuilder.Entity<Checkpoint>().Property(eb => eb.CreationTime).HasDefaultValueSql("GETUTCDATE()");
-
-
+        modelBuilder.Entity<Checkpoint>().Property(eb => eb.CreationTime).HasDefaultValueSql("now()");
+        
         // DB Projections
         modelBuilder.Entity<DateAmountProjection>().HasNoKey();
         modelBuilder.Entity<CountryAmountProjection>().HasNoKey();
