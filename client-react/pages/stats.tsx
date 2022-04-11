@@ -1,9 +1,6 @@
 import NavBar from "../components/NavBar";
-import {useEffect, useState} from "react";
 import Layout from "../components/Layout";
-import GeoMap from "../components/GeoMap";
-import {GeoGraphData, LinearGraphData} from "../types/graph";
-import LinearGraph from "../components/LinearGraph";
+import { GeoGraphData, LinearGraphData } from "../types/graph";
 import Footer from "../components/Footer";
 import {
   getHourlyGraphData,
@@ -11,77 +8,112 @@ import {
   getRegisteredPlanesGraphData,
   mapHourlyPerRegionToGraph,
   mapHourlyToGraph,
-  mapRegisteredToGraph
-} from "../utils/requestHelper";
+  mapRegisteredToGraph,
+} from "../service/requestHelper";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 
-const title = "Stats - Flight Tracker"
-const description = "Daily stats for flight tracker"
+const title = "Stats - Flight Tracker";
+const description = "Daily stats for flight tracker";
 
 type Props = {
-  hourly: LinearGraphData[]
-  registered: GeoGraphData[]
-  hourlyPerRegion: LinearGraphData[]
-}
+  hourly: LinearGraphData[];
+  registered: GeoGraphData[];
+  hourlyPerRegion: LinearGraphData[];
+};
 
-const Stats = ({hourly, registered, hourlyPerRegion}: Props): JSX.Element => {
-  const [screenWidth, setScreenWidth] = useState<number>(0);
+// dynamically load graph components to reduce initial load time
+const DynamicLinearGraph = dynamic(() => import("../components/LinearGraph"), {
+  ssr: false,
+});
+const DynamicGeoMap = dynamic(() => import("../components/GeoMap"), {
+  ssr: false,
+});
 
-  useEffect(() => {
-    setScreenWidth(screen.width > 900 ? 900 : screen.width)
-  }, []);
-
+const Stats = ({ hourly, registered, hourlyPerRegion }: Props): JSX.Element => {
   return (
-    <>
-      <NavBar />
-      <div className={"fl"} />
-      <Layout title={title} description={description}>
-        <div className={"w-full flex flex-col gap-12 mt-12 content-center justify-center"}>
-          <div className={"mx-auto"}>
-            <h1 className={"text-xl"}>Total unique aircraft recorded today</h1>
-            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-              <LinearGraph data={hourly} width={screenWidth} />
+    <Layout title={title} description={description}>
+      <NavBar
+        className="flex opacity-80
+      gap-4 lg:gap-8
+      lg:justify-end lg:py-8 lg:pr-24
+      py-6 pl-8 w-full"
+      />
+      <main className={"grid my-16 sm:my-24 w-screen max-w-full"}>
+        <div
+          className={"container p-1 sm:p-2 max-w-full sm:max-w-7xl flex flex-col gap-24 sm:gap-32"}
+        >
+          <div className={"px-6 py-12 bg-dark-el-1 rounded-md bg-opacity-70"}>
+            <h2 className={"text-2xl p-4"}>
+              The graph below shows how many unique aircraft were in the air at the same time in a
+              specific hour; the data covers the past 48 hours.
+            </h2>
+            <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
+              <div className={"h-[30rem] w-[600px] sm:w-full"}>
+                <DynamicLinearGraph data={hourly} />
+              </div>
             </div>
           </div>
-          <div className={"mx-auto"}>
-            <h1 className={"text-xl"}>Total unique aircraft across the regions recorded today</h1>
-            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-              <LinearGraph data={hourlyPerRegion} width={screenWidth} />
+          <div className={"sm:px-6 sm:py-12 bg-dark-el-1 rounded-md bg-opacity-70 overflow-auto"}>
+            <h2 className={"text-xl sm:text-2xl p-4"}>
+              The graph below illustrates how many distinct airplanes were in the air at the same
+              time in Europe and North America at a certain hour; the data covers the past 24 hours.
+            </h2>
+            <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
+              <div className={"h-[30rem] w-[600px] sm:w-full"}>
+                <DynamicLinearGraph data={hourlyPerRegion} />
+              </div>
             </div>
           </div>
-          <div className={"mx-auto mb-8"}>
-            <h1 className={"text-xl"}>Total aircraft registered per country</h1>
-            <div className={"mt-4 bg-black shadow-xl dark-surface rounded-md"}>
-              <GeoMap data={registered} width={screenWidth} />
+          <div className={"sm:px-6 sm:py-12 bg-dark-el-1 rounded-md bg-opacity-70"}>
+            <h2 className={"text-2xl p-4"}>
+              The graph below depicts the number of unique planes registered in each nation
+              throughout the world; the data includes all planes tracked by application.
+            </h2>
+            <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
+              <div className={"h-[36rem] w-[800px] sm:w-full"}>
+                <DynamicGeoMap data={registered} />
+              </div>
             </div>
           </div>
         </div>
-      </Layout>
-      <Footer />
-    </>
-  )
-}
+      </main>
+      <Footer className={"max-w-full w-screen text-center text-slate-300"}>
+        Copyright {new Date().getFullYear()} -{" "}
+        <Link href={"https://fantasea.pl/ "} prefetch={false}>
+          <a className={"text-sky-400"}>Fantasea</a>
+        </Link>
+      </Footer>
+    </Layout>
+  );
+};
 
 export default Stats;
 
 export async function getStaticProps() {
-  let results;
+  let hourly = null,
+    hourlyPerRegion = null,
+    registered = null;
   try {
-    results = await Promise.all([getHourlyGraphData(), getHourlyPerRegionGraphData(), getRegisteredPlanesGraphData()]);
-  } catch (e: any) {
-    results = null;
-    console.log(e.message);
-  }
+    const [hourlyData, registeredData, hourlyPerRegionData] = await Promise.all([
+      getHourlyGraphData(),
+      getRegisteredPlanesGraphData(),
+      getHourlyPerRegionGraphData(),
+    ]);
 
-  const hourly = results ? mapHourlyToGraph(results[0].data) : null;
-  const hourlyPerRegion = results ? mapHourlyPerRegionToGraph(results[1].data) : null;
-  const registered = results ? mapRegisteredToGraph(results[2].data) : null;
+    hourly = mapHourlyToGraph(await hourlyData.json());
+    hourlyPerRegion = mapHourlyPerRegionToGraph(await hourlyPerRegionData.json());
+    registered = mapRegisteredToGraph(await registeredData.json());
+  } catch (e) {
+    console.log(e);
+  }
 
   return {
     props: {
       hourly,
       hourlyPerRegion,
-      registered
+      registered,
     },
-    revalidate: 3600
-  }
+    revalidate: 2 * 60 * 60, // 2 hours
+  };
 }

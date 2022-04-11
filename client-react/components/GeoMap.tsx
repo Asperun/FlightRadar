@@ -1,25 +1,22 @@
-import {ChoroplethCanvas} from "@nivo/geo";
+import { ResponsiveChoroplethCanvas } from "@nivo/geo";
 import countries from "../public/world_countries.json";
-import {GeoGraphData} from "../types/graph";
-
+import { GeoGraphData } from "../types/graph";
+import { memo } from "react";
 
 export type Props = {
-  data?: GeoGraphData[];
-  width: number;
-}
+  data: GeoGraphData[];
+};
 
-const GeoMap = ({data, width}: Props): JSX.Element | null => {
-
-  if(!data){
+const GeoMap = ({ data }: Props): JSX.Element | null => {
+  if (!data) {
     return null;
   }
 
-  return (<ChoroplethCanvas
-      height={450}
-      width={width}
+  return (
+    <ResponsiveChoroplethCanvas
       data={data}
       features={countries.features}
-      margin={{top: 0, right: 0, bottom: 0, left: 0}}
+      margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
       colors="purples"
       domain={[0, 1000]}
       unknownColor="#000000"
@@ -38,27 +35,33 @@ const GeoMap = ({data, width}: Props): JSX.Element | null => {
           container: {
             background: "#243c5a",
             opacity: "85%",
-            borderRadius: "5%"
-          }
-        }
+            borderRadius: "5%",
+          },
+        },
+        legends: {
+          text: {
+            fill: "#F5F6F7",
+          },
+        },
       }}
       legends={[
         {
-          anchor: 'bottom-left',
-          direction: 'column',
+          anchor: "bottom-left",
+          direction: "column",
           justify: true,
           translateX: 20,
           translateY: -60,
           itemsSpacing: 0,
           itemWidth: 92,
           itemHeight: 18,
-          itemDirection: 'left-to-right',
+          itemDirection: "left-to-right",
           itemOpacity: 0.85,
-          symbolSize: 18
-        }
+          symbolSize: 18,
+        },
       ]}
     />
-  )
-}
+  );
+};
 
-export default GeoMap
+// same as LinearGraph
+export default memo(GeoMap, () => true);

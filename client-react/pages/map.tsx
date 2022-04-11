@@ -5,12 +5,12 @@ const MapComponent = dynamic(() => import("../components/InteractiveMap"), {
   ssr: false,
 });
 
-const title = "Map - Flight Tracker";
+const title = "Interactive Map - Flight Tracker";
 const description = "Flight Tracker interactive map";
 
-const Map = (): JSX.Element => {
+const Map = (): JSX.Element | null => {
   return (
-    <Layout title={title} description={description} dontAnimate={true}>
+    <Layout title={title} description={description}>
       <MapComponent />
     </Layout>
   );

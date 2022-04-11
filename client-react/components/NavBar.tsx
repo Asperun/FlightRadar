@@ -1,34 +1,63 @@
-import {useEffect, useState} from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
-const NavBar = (): JSX.Element => {
+type NavLink = {
+  label: string;
+  slug: string;
+};
+
+const navLinks: NavLink[] = [
+  {
+    label: "Home",
+    slug: "/",
+  },
+  {
+    label: "Map",
+    slug: "/map",
+  },
+  {
+    label: "Statistics",
+    slug: "/stats",
+  },
+];
+
+interface Props extends React.HTMLAttributes<HTMLElement> {}
+
+const NavBar = ({ ...props }: Props): JSX.Element => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("/");
-  const getInActiveClassName: string = "hover:opacity-100 hover:text-orange-400 transition-colors text-md hover:-translate-y-0.5 duration-200 ease-linear";
-  const getActiveClassName: string = "hover:opacity-100 text-orange-400 transition-colors duration-200 ease-linear text-md border-b-2 border-orange-400";
+
+  const getInActiveClassName: string =
+    "hover:opacity-100 hover:text-orange-300 transition-colors text-md hover:-translate-y-0.5 duration-200 ease-linear";
+  const getActiveClassName: string =
+    "hover:opacity-100 text-orange-300 transition-colors duration-200 ease-linear text-md border-b-2 border-orange-300";
 
   useEffect(() => {
-    setActiveTab(window.location.pathname);
-  }, [])
+    const currentPath = router.pathname;
+    setActiveTab(navLinks.find((link) => link.slug === currentPath)?.slug || "/");
+  }, []);
 
-  return (<div className="flex opacity-80
-      gap-4 lg:gap-8
-      lg:justify-end lg:py-8 lg:pr-24
-      py-6 pl-8">
-    <button onClick={() => handleClick("/")} className={activeTab === "/" ? getActiveClassName : getInActiveClassName}>
-      <Link href="/">Main</Link>
-    </button>
-    <button onClick={() => handleClick("/map")} className={activeTab === "/map" ? getActiveClassName : getInActiveClassName}>
-      <Link href="/map">Map</Link>
-    </button>
-    <button onClick={() => handleClick("/stats")} className={activeTab === "/stats" ? getActiveClassName : getInActiveClassName}>
-      <Link href="/stats">Stats</Link>
-    </button>
-  </div>);
+  const handleClick = useCallback(
+    (slug: string) => {
+      setActiveTab(slug);
+    },
+    [setActiveTab]
+  );
 
-  function handleClick(tabName: string): void {
-    setActiveTab(tabName);
-  }
-
+  return (
+    <nav {...props}>
+      {navLinks.map((link: NavLink) => (
+        <>
+          <Link href={link.slug} key={link.slug}>
+            <a className={activeTab === link.slug ? getActiveClassName : getInActiveClassName}>
+              <button onClick={() => handleClick("/")}>{link.label}</button>
+            </a>
+          </Link>
+        </>
+      ))}
+    </nav>
+  );
 };
 
 export default NavBar;

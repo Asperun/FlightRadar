@@ -1,8 +1,13 @@
-import {useEffect, useState} from "react";
-import {NextPage} from "next";
-import {NextRouter, useRouter} from "next/router";
+import { useEffect, useState } from "react";
+import { NextRouter, useRouter } from "next/router";
+import Layout from "../components/Layout";
+import pageNotFound from "../public/page-not-found.svg";
+import Image from "next/image";
 
-const ErrorPage: NextPage = (): JSX.Element => {
+const title = "Page not found";
+const description = "Error page";
+
+const ErrorPage = (): JSX.Element => {
   const [time, setTime] = useState<number>(5);
   const router: NextRouter = useRouter();
   useEffect(() => {
@@ -12,17 +17,26 @@ const ErrorPage: NextPage = (): JSX.Element => {
     }
     setTimeout(() => {
       setTime((redirectSeconds) => redirectSeconds - 1);
-    }, 1000)
+    }, 1000);
   }, [time]);
 
   return (
-    <div className={"flex h-96"}>
-      <div className={"m-auto"}>
-        <p>Page not found</p>
-        <p>Redirecting in {time}</p>
+    <Layout title={title} description={description}>
+      <div className={"w-screen h-screen flex justify-center items-center"}>
+        <div className={"container p-2 max-w-xl text-center text-slate-400"}>
+          <Image
+            src={pageNotFound}
+            alt={"logo.png"}
+            layout={"responsive"}
+            objectFit={"scale-down"}
+            height={128}
+            width={320}
+          />
+          <p className={"mt-4 text-xl"}>Page not found... redirecting in {time}</p>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
-}
+};
 
-export default ErrorPage
+export default ErrorPage;
