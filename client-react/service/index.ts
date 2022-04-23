@@ -17,9 +17,6 @@ function processPath(checkpoints: number[][]) {
 
   return bezier.reduce((acc: [], line: any) => {
     return [...acc, line[0], line[1], line[2], line[3]];
-    // for (const property in line) {
-    //
-    // }
   }, []);
 }
 

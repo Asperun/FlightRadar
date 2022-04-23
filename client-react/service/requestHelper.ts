@@ -1,11 +1,11 @@
 import { GeoGraphData, LinearGraphData } from "../types/graph";
 import { convertCountryToAlpha3Code } from "./countryUtils";
 
-// const apiEndpoint =
-//   process.env.NODE_ENV === "production"
-//     ? "https://api.fantasea.pl/v1/planes"
-//     : "http://localhost:5001/v1/planes";
-const apiEndpoint = "https://api.fantasea.pl/v1/planes";
+const apiEndpoint =
+  process.env.NODE_ENV === "production"
+    ? "https://api.fantasea.pl/v1/planes"
+    : "http://localhost:5001/v1/planes";
+// const apiEndpoint = "https://api.fantasea.pl/v1/planes";
 
 export async function fetchSidePanelStats() {
   const response = await fetch(`${apiEndpoint}/stats/global`);

@@ -256,39 +256,22 @@ public class PlaneService
         // 2. Update database based on Icao24 hex string
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-
-
-        // 3. Pull new context from pool, do this because main context might be used
         planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
 
-        // await using (var transaction = await planeContext.Database.BeginTransactionAsync())
-        // {
         try
         {
             await planeContext.BulkInsertOrUpdateAsync(planes, new BulkConfig
             {
-                // UniqueTableNameTempDb = true,
-                // UseTempDB = true,
-                UpdateByProperties = new List<string>(1) { nameof(Plane.Icao24) }
-                //     // PropertiesToExcludeOnUpdate = new List<string>(2) { nameof(Plane.Icao24), nameof(Plane.RegCountry) },
-                //     // BatchSize = 3000,
-                //     // TrackingEntities = false,
-                //     // WithHoldlock = false
+                UpdateByProperties = new List<string>(1) { nameof(Plane.Icao24) },
+                BatchSize = 3000,
+                TrackingEntities = false,
+                WithHoldlock = false
             });
-
-            // await planeContext.Planes.AddRangeAsync(planes);
-            // await planeContext.SaveChangesAsync();
-            // await transaction.CommitAsync();
         }
         catch (Exception e)
         {
             logger.LogWarning("{Message}", e.Message);
         }
-        //     finally
-        //     {
-        //         await transaction.DisposeAsync();
-        //     }
-        // }
 
         stopwatch.Stop();
         logger.LogInformation("Updated planes in={Time}", stopwatch.ElapsedMilliseconds);
@@ -333,100 +316,68 @@ public class PlaneService
             logger.LogInformation("Query time={QueryTimeMs}ms, el={ListSize}", stopwatch.ElapsedMilliseconds, dbPlanes.Count);
 
             var icaos = dbPlanes.Select(d => d.Icao24).ToList();
-            await using (var transaction = await planeContext.Database.BeginTransactionAsync())
+            // 2. Binary comparison db list with memory list and update
+            for (var i = planes.Count - 1; i-- > 0;)
             {
-                // 2. Binary comparison db list with memory list and update
-                for (var i = planes.Count - 1; i-- > 0;)
+                var memoryPlane = planes[i];
+
+                var index = icaos.BinarySearch(memoryPlane.Icao24);
+                if (index < 0) continue;
+
+                var dbPlane = dbPlanes[index];
+                var hasActiveFlight = dbPlane.FlightId != null;
+
+                switch (memoryPlane.OnGround)
                 {
-                    var memoryPlane = planes[i];
-
-                    var index = icaos.BinarySearch(memoryPlane.Icao24);
-                    if (index < 0) continue;
-
-                    var dbPlane = dbPlanes[index];
-                    var hasActiveFlight = dbPlane.FlightId != null;
-
-                    switch (memoryPlane.OnGround)
+                    case false when !hasActiveFlight && memoryPlane.Velocity > 100f: // in air but doesnt have flight and velocity higher than 40km/h
                     {
-                        case false when !hasActiveFlight && memoryPlane.Velocity > 15f: // in air but doesnt have flight and velocity higher than 40km/h
-                        {
-                            // var newFlight = new Flight { PlaneId = dbPlane.Id, Checkpoints = new List<Checkpoint>(1) { GetCheckpointFromPlane(memoryPlane) } };
-                            var newFlight = new Flight { PlaneId = dbPlane.Id };
-                            planeContext.Flights.Add(newFlight);
+                        var newFlight = new Flight { PlaneId = dbPlane.Id };
+                        planeContext.Flights.Add(newFlight);
+                        break;
+                    }
+                    case true when hasActiveFlight: // on ground but has active flight
+                    {
+                        planeContext.Flights.Update(new Flight { Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true });
+                        break;
+                    }
+                    case false when hasActiveFlight && memoryPlane.Velocity < 100f:
+                    {
+                        planeContext.Flights.Update(new Flight { Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true });
+                        break;
+                    }
+                    case false when hasActiveFlight: //  if flying
+                    {
+                        var checkpoint = GetCheckpointFromPlane(memoryPlane, dbPlane.FlightId.Value);
 
-                            // var cp = GetCheckpointFromPlane(memoryPlane);
-                            // cp.FlightId = newFlight;
-                            // planeContext.Checkpoints.Add(cp);
-                            // newFlight.Checkpoints.Add(cp);
-                            // newFlight.Checkpoints = new List<Checkpoint>(1){GetCheckpointFromPlane(memoryPlane)};
-                            // planeContext.Update(newFlight);
-                            // planeContext.Checkpoints.Add()
+                        if (dbPlane.LastCheckpointTrueTrack == null)
+                        {
+                            planeContext.Checkpoints.Add(checkpoint);
                             break;
                         }
-                        case true when hasActiveFlight: // on ground but has active flight
-                        {
-                            // planeContext.Flights.Where(f=>f.Id == dbPlane.Id).First().
-                            planeContext.Flights.Update(new Flight
-                            {
-                                Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true
-                            }); // set active flight completed
-                            break;
-                        }
-                        case false
-                            when hasActiveFlight && memoryPlane.Velocity > 2 && memoryPlane.Velocity < 15f
-                            : // not on ground but speed lower than 40km/h so prob landed
-                        {
-                            planeContext.Flights.Update(new Flight
-                            {
-                                Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true
-                            }); // set active flight completed
-                            break;
-                        }
-                        case false when hasActiveFlight: //  if flying
-                        {
-                            var checkpoint = GetCheckpointFromPlane(memoryPlane, dbPlane.FlightId.Value);
 
-                            if (dbPlane.LastCheckpointTrueTrack == null) // have flight but dont have cp ? O_o
-                            {
-                                planeContext.Checkpoints.Add(checkpoint);
-                                break;
-                            }
-
-                            if (Math.Abs(dbPlane.LastCheckpointTrueTrack.Value - memoryPlane.TrueTrack) > turnRadiusThreshold)
-                                // turned 35 degree since last checkpoint
-                                // Console.WriteLine("updating CP with flightId=" + dbPlane.FlightId);
-                                // planeContext.Checkpoints.FromSqlInterpolated(@$"Insert Into Checkpoints(FlightId,TrueTrack,Velocity,Latitude,Longitude,Altitude) Values ({dbPlane.FlightId},{checkpoint.TrueTrack},{checkpoint.Velocity},{checkpoint.Latitude},{checkpoint.Longitude},{checkpoint.Altitude})").;
-                                planeContext.Checkpoints.Add(checkpoint);
-
-                            break;
-                        }
-                        case true when !hasActiveFlight: // On ground and idle
-                        {
-                            continue;
-                        }
+                        if (Math.Abs(dbPlane.LastCheckpointTrueTrack.Value - memoryPlane.TrueTrack) > turnRadiusThreshold)
+                            planeContext.Checkpoints.Add(checkpoint);
+                        break;
+                    }
+                    case true when !hasActiveFlight: // On ground and idle
+                    {
+                        continue;
                     }
                 }
-
-                // 3. Update DB
-
-                try
-                {
-                    await planeContext.BulkSaveChangesAsync(new BulkConfig
-                    {
-                        // WithHoldlock = false,
-                        // TrackingEntities = false,
-                        // BatchSize = 3000
-                    });
-                }
-                catch (Exception e)
-                {
-                    logger.LogWarning("{Message}", e.Message);
-                }
-                finally
-                {
-                    await transaction.DisposeAsync();
-                }
             }
+            
+            // 3. Update DB
+            // Bug in recent BulkSaveChanges where it instantly drops new temp tables.
+            await planeContext.SaveChangesAsync();
+            // await planeContext.BulkSaveChangesAsync(new BulkConfig
+            // {
+            // WithHoldlock = false,
+            // TrackingEntities = false,
+            // UniqueTableNameTempDb = true,
+            // UseTempDB = true,
+            //
+            // BatchSize = 3000
+            // });
         }
         catch (Exception e)
         {
@@ -436,8 +387,7 @@ public class PlaneService
         {
             planeContext.ChangeTracker.AutoDetectChangesEnabled = true;
         }
-
+        
         logger.LogInformation("Bulk save Done!");
-        stopwatch.Stop();
     }
 }

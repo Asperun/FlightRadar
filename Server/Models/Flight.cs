@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightRadar.Models;
 
@@ -7,6 +8,7 @@ namespace FlightRadar.Models;
 ///     Model class for Flight entity
 /// </summary>
 [Table("flights")]
+[Index(nameof(PlaneId), nameof(IsCompleted))]
 public class Flight : EntityBase
 {
     [JsonIgnore] public Plane Plane { get; set; } = null!;

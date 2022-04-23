@@ -45,7 +45,8 @@ public sealed class DateAmountProjection
 
     public static FormattableString Query(DateTime startDate, DateTime endDate)
     {
-        return $"Select DATE_PART('Day', creationtime)::integer as \"Day\", TRIM(TRAILING FROM to_char (creationtime, 'Month')) as \"Month\", DATE_PART('HOUR', creationtime)::integer  as \"Hour\", Count(distinct flightid)::integer     as \"Count\" from checkpoints where creationtime BETWEEN {startDate} and {endDate} Group By to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime) Order BY to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime)";
+        return
+            $"Select DATE_PART('Day', creationtime)::integer as \"Day\", TRIM(TRAILING FROM to_char (creationtime, 'Month')) as \"Month\", DATE_PART('HOUR', creationtime)::integer  as \"Hour\", Count(distinct flightid)::integer     as \"Count\" from checkpoints where creationtime BETWEEN {startDate} and {endDate} Group By to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime) Order BY to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime)";
     }
 }
 
@@ -54,7 +55,7 @@ public sealed class DateAmountProjection
 /// </summary>
 public sealed class CountryAmountProjection
 {
-    public static readonly string Query = 
+    public static readonly string Query =
         "Select RegCountry as \"Country\", Count(Id) as \"Count\" from Planes as p Group By RegCountry Order By \"Count\" Desc";
 
     public string Country { get; set; } = null!;
@@ -68,7 +69,7 @@ public sealed class GeneralStatsProjection
 {
     public static readonly string Query =
         "Select (Select Count(*) from Planes) as \"TotalPlanes\", (Select Count(*) from Flights) as \"TotalFlights\", (Select Count(*) from Checkpoints) as \"TotalCheckpoints\"";
-    
+
     public int TotalPlanes { get; set; }
     public int TotalFlights { get; set; }
     public int TotalCheckpoints { get; set; }

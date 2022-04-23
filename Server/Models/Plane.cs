@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightRadar.Models;
 
@@ -7,6 +8,7 @@ namespace FlightRadar.Models;
 ///     Model class for Plane entity
 /// </summary>
 [Table("planes")]
+[Index(nameof(Icao24), IsUnique = true)]
 public class Plane : EntityBase
 {
     [MaxLength(6)]

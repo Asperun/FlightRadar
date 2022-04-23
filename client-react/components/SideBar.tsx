@@ -214,7 +214,7 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
               </div>
               <div>
                 <p className={"text-orange-600"}>
-                  {(plane?.flights &&
+                  {(plane?.flights && plane.flights.length > 0 && plane.flights[0].checkpoints.length > 0 &&
                     Math.floor(
                       (plane?.flights[0].checkpoints.reduce(
                         (total, next) => total + next.velocity,
@@ -229,9 +229,9 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
               </div>
               <div>
                 <p className={"text-orange-600"}>
-                  {(plane?.flights &&
+                  {(plane?.flights && plane.flights.length > 0 && plane.flights[0].checkpoints.length > 0 &&
                     Math.floor(
-                      plane.flights[0]?.checkpoints.reduce(
+                      plane.flights[0].checkpoints.reduce(
                         (total, next) => total + next.altitude,
                         0
                       ) / plane.flights[0]?.checkpoints.length

@@ -88,26 +88,31 @@ public class PlanesFetcher : IHostedService, IDisposable
     /// <param name="callback">Callback delegate for post-fetching tasks</param>
     private async void FetchPlanes(object? state, FetchCallback callback)
     {
-        using var httpResponseMessage = await SendFetchRequest();
-        if (!httpResponseMessage.IsSuccessStatusCode)
+        using (var httpResponseMessage = await SendFetchRequest())
         {
-            logger.LogWarning("Fetch failed - OpenSkyApi bad response");
-            return;
+            if (!httpResponseMessage.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Fetch failed - OpenSkyApi bad response");
+                return;
+            }
+
+            await using (var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync())
+            {
+                if (!contentStream.CanRead || contentStream.Length <= 0) return;
+                var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
+
+                if (response == null)
+                {
+                    logger.LogWarning("Fetch failed - Response was null");
+                    return;
+                }
+
+                var recentPlanes = response.ToModelList();
+
+                if (recentPlanes.Count > 0)
+                    await callback(recentPlanes);
+            }
         }
-
-        await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
-
-        var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
-
-        if (response == null)
-        {
-            logger.LogWarning("Fetch failed - Response was null");
-            return;
-        }
-
-        var recentPlanes = response.ToModelList();
-
-        await callback(recentPlanes);
     }
 
     /// <summary>

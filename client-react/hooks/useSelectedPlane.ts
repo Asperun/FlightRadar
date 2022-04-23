@@ -78,7 +78,7 @@ export const useSelectedPlane = () => {
     // let currentPlane = planeDetails
     // currentPlane.latitude = plane.latitude
     // currentPlane.longitude = plane.longitude
-    setPlaneDetails({...planeDetails,latitude:plane.latitude,longitude:plane.longitude})
+    // setPlaneDetails({...planeDetails,latitude:plane.latitude,longitude:plane.longitude})
   };
 
   return {

@@ -11,6 +11,7 @@ public class PlaneContext : DbContext
 {
     public PlaneContext(DbContextOptions options) : base(options)
     {
+
     }
 
     // === Tables ===
@@ -38,8 +39,8 @@ public class PlaneContext : DbContext
                     .WithOne(c => c.Flight)
                     .HasForeignKey(c => c.FlightId);
 
-        modelBuilder.Entity<Checkpoint>().Property(eb => eb.CreationTime).HasDefaultValueSql("now()");
-        
+        modelBuilder.Entity<Checkpoint>().Property(cp => cp.CreationTime).HasDefaultValueSql("now()");
+
         // DB Projections
         modelBuilder.Entity<DateAmountProjection>().HasNoKey();
         modelBuilder.Entity<CountryAmountProjection>().HasNoKey();

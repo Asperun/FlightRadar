@@ -1,11 +1,9 @@
-using System.IO.Compression;
 using System.Net;
 using System.Text.Json;
 using FlightRadar.Data;
 using FlightRadar.Services;
 using FlightRadar.Tasks;
 using FlightRadar.Util;
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,16 +37,16 @@ builder.WebHost.ConfigureKestrel((context, options) =>
 });
 
 // ====== Compression ======
-builder.Services.AddResponseCompression(options =>
-{
-    // options.EnableForHttps = true;
-    options.Providers.Add<BrotliCompressionProvider>();
-    options.Providers.Add<GzipCompressionProvider>();
-    options.MimeTypes = new[] { "text/plain", "text/event-stream", "application/json" };
-});
-
-builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
-builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
+// builder.Services.AddResponseCompression(options =>
+// {
+//     // options.EnableForHttps = true;
+//     options.Providers.Add<BrotliCompressionProvider>();
+//     options.Providers.Add<GzipCompressionProvider>();
+//     options.MimeTypes = new[] { "text/plain", "text/event-stream", "application/json" };
+// });
+//
+// builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
+// builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
 
 var app = builder.Build();
 
@@ -60,11 +58,10 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.UseResponseCompression();
+// app.UseResponseCompression();
 app.UseRouting();
 app.UseAuthentication();
 app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().Build());
-// app.UseCors(b => b.SetIsOriginAllowedToAllowWildcardSubdomains());
 app.UseAuthorization();
 app.UseEndpoints(endpoint => endpoint.MapControllers());
 
