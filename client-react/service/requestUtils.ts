@@ -69,8 +69,17 @@ export async function fetchTrackDetails(icao24: string) {
   return null;
 }
 
-export function subscribeToUpdates(minLat: number, minLong: number, maxLat: number, maxLong: number, limit: number = 200): EventSource {
-  return new EventSource(`${apiBase}/subscribe?minLat=${minLat}&minLong=${minLong}&maxLat=${maxLat}&maxLong=${maxLong}&limit=${limit}`);
+export function subscribeToUpdates(
+  minLat: number,
+  minLong: number,
+  maxLat: number,
+  maxLong: number,
+  limit: number = 300,
+  showLanded = false
+): EventSource {
+  return new EventSource(
+    `${apiBase}/subscribe?minLat=${minLat}&minLong=${minLong}&maxLat=${maxLat}&maxLong=${maxLong}&limit=${limit}&showLanded=${showLanded}`
+  );
 }
 
 // one day i will rewrite this

@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.query.icao24) {
-    const response = await fetch( `https://opensky-network.org/api/metadata/aircraft/icao/${req.query.icao24}` );
+    const response = await fetch(`https://opensky-network.org/api/metadata/aircraft/icao/${req.query.icao24}`);
 
     if (response.ok) {
       const planeInfo = await response.json();

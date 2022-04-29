@@ -9,14 +9,15 @@ import { useSelectedPlane } from "../hooks/useSelectedPlane";
 import { useRouter } from "next/router";
 import { Map as LeafletMap } from "leaflet";
 import { getPath } from "../service";
+import { useMapSettings } from "../hooks/useMapSettings";
 
 const DynamicSideBar = dynamic(() => import("./SideBar"), { ssr: false });
 const DynamicMarker = dynamic(() => import("./PlaneMarker"), { ssr: false });
-
-const maxPlanesToFetch = 300;
+const DynamicMapSettings = dynamic(() => import("./MapSettings"), { ssr: false });
 
 const InteractiveMap = (): JSX.Element => {
   const { setSelectedPlane, getSelectedPlane, updateSelectedPlane } = useSelectedPlane();
+  const { maxPlanes, showPaths, showLanded } = useMapSettings();
   const mapRef = useRef<LeafletMap | null>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [mapData, setMapData] = useState<MapData>({ planes: [], amountReceived: 0 });
@@ -48,7 +49,8 @@ const InteractiveMap = (): JSX.Element => {
       bounds.getSouthWest().lng,
       bounds.getNorthEast().lat,
       bounds.getNorthEast().lng,
-      maxPlanesToFetch
+      maxPlanes,
+      showLanded
     );
     newStream.onmessage = processServerResponse;
 
@@ -69,31 +71,19 @@ const InteractiveMap = (): JSX.Element => {
 
     let currentSelected = null;
     if (selectedPlane) {
-      const selectedPlaneIndex = recentFetchedPlanes.findIndex(
-        (plane) => plane.icao24 === selectedPlane.icao24
-      );
+      const selectedPlaneIndex = recentFetchedPlanes.findIndex((plane) => plane.icao24 === selectedPlane.icao24);
 
       if (selectedPlaneIndex > -1) {
         recentFetchedPlanes.splice(selectedPlaneIndex, 1);
       }
 
-      currentSelected = (
-        <DynamicMarker
-          key={selectedPlane.icao24}
-          plane={selectedPlane}
-          setSelectedPlane={setSelectedPlane}
-        />
-      );
+      currentSelected = <DynamicMarker key={selectedPlane.icao24} plane={selectedPlane} setSelectedPlane={setSelectedPlane} />;
     }
 
     return [
       currentSelected,
       ...recentFetchedPlanes.map((plane) => {
-        return (
-          plane.callSign && (
-            <DynamicMarker key={plane.icao24} plane={plane} setSelectedPlane={setSelectedPlane} />
-          )
-        );
+        return plane.callSign && <DynamicMarker key={plane.icao24} plane={plane} setSelectedPlane={setSelectedPlane} />;
       }),
     ];
   };
@@ -112,10 +102,7 @@ const InteractiveMap = (): JSX.Element => {
   );
 
   return (
-    <div
-      onContextMenu={(e) => e.preventDefault()}
-      className="w-screen max-w-full h-screen max-h-screen"
-    >
+    <div onContextMenu={(e) => e.preventDefault()} className="w-screen max-w-full h-screen max-h-screen">
       <MapContainer
         doubleClickZoom={false}
         center={[router.query.x ? +router.query.x : 51.505, router.query.y ? +router.query.y : 19]}
@@ -136,29 +123,23 @@ const InteractiveMap = (): JSX.Element => {
         />
         <LocationMarker />
         {renderPlanes()}
-        {selectedPlane &&
-          selectedPlane.flights &&
-          selectedPlane.flights.length > 0 &&
-          selectedPlane.flights[0].checkpoints && (
-            <Polyline
-              interactive={false}
-              positions={getPath(selectedPlane)}
-              pathOptions={{
-                interactive: false,
-                color: "lime",
-                bubblingMouseEvents: false,
-                lineJoin: "round",
-                opacity: 0.8,
-                weight: 3,
-              }}
-            />
-          )}
+        {selectedPlane && showPaths && selectedPlane.flights && selectedPlane.flights.length > 0 && selectedPlane.flights[0].checkpoints && (
+          <Polyline
+            interactive={false}
+            positions={getPath(selectedPlane)}
+            pathOptions={{
+              interactive: false,
+              color: "lime",
+              bubblingMouseEvents: false,
+              lineJoin: "round",
+              opacity: 0.8,
+              weight: 3,
+            }}
+          />
+        )}
       </MapContainer>
-      <DynamicSideBar
-        plane={selectedPlane || undefined}
-        setSelectedPlane={setSelectedPlane}
-        totalPlanes={mapData.amountReceived}
-      />
+      <DynamicSideBar plane={selectedPlane || undefined} setSelectedPlane={setSelectedPlane} totalPlanes={mapData.amountReceived} />
+      <DynamicMapSettings className={"absolute flex flex-col gap-4 justify-center items-end w-44 top-5 right-5 z-[99999]"} />
     </div>
   );
 };
