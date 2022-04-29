@@ -1,10 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plane, PlaneDetails } from "../types/plane";
-import {
-  fetchManufacturerDetails,
-  fetchPlaneImage,
-  fetchTrackDetails,
-} from "../service/requestUtils";
+import { fetchManufacturerDetails, fetchPlaneImage, fetchTrackDetails } from "../service/requestUtils";
 
 export const useSelectedPlane = () => {
   const [selectedPlane, setSelectedPlane] = useState<PlaneDetails | null>(null);
@@ -31,11 +27,7 @@ export const useSelectedPlane = () => {
     const manufacturerPromise = fetchManufacturerDetails(icao24);
     const trackPromise = fetchTrackDetails(icao24);
 
-    const [imageData, manufacturerData, trackData] = await Promise.all([
-      imagePromise,
-      manufacturerPromise,
-      trackPromise,
-    ]);
+    const [imageData, manufacturerData, trackData] = await Promise.all([imagePromise, manufacturerPromise, trackPromise]);
 
     const merged: PlaneDetails = {
       ...imageData,

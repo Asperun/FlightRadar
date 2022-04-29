@@ -34,9 +34,7 @@ const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
           width="32"
           height="32"
           style={{ transform: `rotate(${plane.trueTrack}deg)` }}
-          className={`hover:hue-rotate-60 click:hue-rotate-60 overflow-hidden ${
-            plane.isSelected === true && "hue-rotate-90"
-          }`}
+          className={`hover:hue-rotate-60 click:hue-rotate-60 overflow-hidden ${plane.isSelected === true && "hue-rotate-90"}`}
           src={planeImgOrange}
           alt="plane.png"
         />

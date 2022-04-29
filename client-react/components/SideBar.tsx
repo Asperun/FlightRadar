@@ -1,9 +1,9 @@
-﻿import {memo, ReactElement, useEffect, useState} from "react";
-import {fetchSidePanelStats} from "../service/requestUtils";
-import {convertCountryToAlpha2Code} from "../service/countryUtils";
-import {PlaneDetails} from "../types/plane";
+﻿import { memo, ReactElement, useEffect, useState } from "react";
+import { fetchSidePanelStats } from "../service/requestUtils";
+import { convertCountryToAlpha2Code } from "../service/countryUtils";
+import { PlaneDetails } from "../types/plane";
 import Image from "next/image";
-import {blurredShimmer} from "../service";
+import { blurredShimmer } from "../service";
 
 type Props = {
   plane?: PlaneDetails;
@@ -13,7 +13,7 @@ type Props = {
 };
 
 // todo: rewrite to use day.js
-const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.Element => {
+const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.Element => {
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -46,21 +46,11 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
     let timeSinceStart: string | undefined;
     let distanceSinceStart: number | undefined;
 
-    if (
-      plane?.flights &&
-      plane.flights.length > 0 &&
-      plane.flights[0].checkpoints &&
-      plane.flights[0].checkpoints.length > 0
-    ) {
+    if (plane?.flights && plane.flights.length > 0 && plane.flights[0].checkpoints && plane.flights[0].checkpoints.length > 0) {
       const checkpoints = plane.flights[0].checkpoints;
 
       timeSinceStart = convertSeconds(
-        Math.floor(
-          (Date.parse(new Date().toUTCString()) -
-            3600000 -
-            Date.parse(checkpoints[0].creationTime as unknown as string)) /
-          1000
-        )
+        Math.floor((Date.parse(new Date().toUTCString()) - 3600000 - Date.parse(checkpoints[0].creationTime as unknown as string)) / 1000)
       );
 
       distanceSinceStart = calcDistance(
@@ -96,9 +86,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
                 {(plane?.country || plane?.regCountry) && (
                   <Image
                     className={"opacity-100"}
-                    src={`https://hatscripts.github.io/circle-flags/flags/${convertCountryToAlpha2Code(
-                      (plane.country || plane.regCountry)!
-                    )}.svg`}
+                    src={`https://hatscripts.github.io/circle-flags/flags/${convertCountryToAlpha2Code((plane.country || plane.regCountry)!)}.svg`}
                     alt={""}
                     title={plane.country}
                     width={28}
@@ -108,8 +96,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
                   />
                 )}
                 <div className={"ml-1 text-orange-400 whitespace-nowrap"}>
-                  {planeManufactuer || "Unknown"}{" "}
-                  <span className={"text-white"}>{plane?.typecode || ""}</span>
+                  {planeManufactuer || "Unknown"} <span className={"text-white"}>{plane?.typecode || ""}</span>
                 </div>
               </div>
             </div>
@@ -125,11 +112,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
                 />
               )}
               {plane?.photographer && (
-                <span
-                  className={"absolute bottom-0 py-1 bg-gray-800 bg-opacity-80 w-full text-center"}
-                >
-                  by {plane.photographer}
-                </span>
+                <span className={"absolute bottom-0 py-1 bg-gray-800 bg-opacity-80 w-full text-center"}>by {plane.photographer}</span>
               )}
             </div>
           </div>
@@ -169,21 +152,15 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
             <p className="text-center bg-blue-900 bg-opacity-60">Route</p>
             <div className="grid p-2 items-center text-center grid-cols-3 grid-rows-2 basis-1/3">
               <div>
-                <p className={"text-orange-600"}>
-                  {(plane?.velocity && Math.floor(3.6 * plane.velocity) + "km/h") || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(plane?.velocity && Math.floor(3.6 * plane.velocity) + "km/h") || "?"}</p>
                 Speed
               </div>
               <div>
-                <p className={"text-orange-600"}>
-                  {(plane?.geoAltitude && Math.floor(plane.geoAltitude) + "m") || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(plane?.geoAltitude && Math.floor(plane.geoAltitude) + "m") || "?"}</p>
                 Altitude
               </div>
               <div>
-                <p className={"text-orange-600"}>
-                  {(plane?.trueTrack && Math.floor(plane.trueTrack) + "°") || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(plane?.trueTrack && Math.floor(plane.trueTrack) + "°") || "?"}</p>
                 Direction`
               </div>
               <div>
@@ -191,42 +168,41 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
                 Updated
               </div>
               <div>
-                <p className={"text-orange-600"}>
-                  {(timeSinceStart !== undefined && timeSinceStart) || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(timeSinceStart !== undefined && timeSinceStart) || "?"}</p>
                 In air
               </div>
               <div>
-                <p className={"text-orange-600"}>
-                  {(distanceSinceStart !== undefined && distanceSinceStart.toFixed() + "km") || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(distanceSinceStart !== undefined && distanceSinceStart.toFixed() + "km") || "?"}</p>
                 Distance
               </div>
             </div>
             <p className="text-center bg-blue-900 bg-opacity-60">Checkpoints</p>
             <div className="grid p-2 items-center text-center grid-cols-3 grid-rows-1">
               <div>
-                <p className={"text-orange-600"}>
-                  {(plane?.flights && plane.flights[0]?.checkpoints.length) || "?"}
-                </p>
+                <p className={"text-orange-600"}>{(plane?.flights && plane.flights[0]?.checkpoints.length) || "?"}</p>
                 Amount
               </div>
               <div>
                 <p className={"text-orange-600"}>
                   {(plane?.flights &&
-                      plane.flights.length > 0 &&
-                      plane.flights[0].checkpoints.length > 0 &&
-                      Math.floor(
-                        (plane?.flights[0].checkpoints.reduce((total, next) => total + next.velocity, 0) / plane.flights[0]?.checkpoints.length) * 3.6) + "km/h") || "?"}
+                    plane.flights.length > 0 &&
+                    plane.flights[0].checkpoints.length > 0 &&
+                    Math.floor(
+                      (plane?.flights[0].checkpoints.reduce((total, next) => total + next.velocity, 0) / plane.flights[0]?.checkpoints.length) * 3.6
+                    ) + "km/h") ||
+                    "?"}
                 </p>
                 Avg speed
               </div>
               <div>
                 <p className={"text-orange-600"}>
                   {(plane?.flights &&
-                      plane.flights.length > 0 &&
-                      plane.flights[0].checkpoints.length > 0 &&
-                      Math.floor(plane.flights[0].checkpoints.reduce((total, next) => total + next.altitude, 0) / plane.flights[0]?.checkpoints.length) + "m") || "?"}
+                    plane.flights.length > 0 &&
+                    plane.flights[0].checkpoints.length > 0 &&
+                    Math.floor(
+                      plane.flights[0].checkpoints.reduce((total, next) => total + next.altitude, 0) / plane.flights[0]?.checkpoints.length
+                    ) + "m") ||
+                    "?"}
                 </p>
                 Avg Altitude
               </div>
@@ -249,13 +225,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
           </p>
           <p>In Air {stats.inAir}</p>
           <p>On Ground {stats.totalPlanes - stats.inAir}</p>
-          <p>
-            Traffic{" "}
-            {Math.floor(
-              ((stats.totalPlanes - (stats.totalPlanes - stats.inAir)) / stats.totalPlanes) * 100
-            )}
-            %
-          </p>
+          <p>Traffic {Math.floor(((stats.totalPlanes - (stats.totalPlanes - stats.inAir)) / stats.totalPlanes) * 100)}%</p>
           <p className="text-center bg-blue-900 bg-opacity-60">Air Spaces</p>
           <p>US {stats.zoneUs}</p>
           <p>EU {stats.zoneEu}</p>
@@ -267,7 +237,7 @@ const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.El
 };
 
 function convertSeconds(seconds: number): string {
-  return ((Math.floor(seconds / (60 * 60)) > 0 ? (seconds / (60 * 60)).toFixed() + "hr " : "") + ((seconds / 60) % 60).toFixed() + "min");
+  return (Math.floor(seconds / (60 * 60)) > 0 ? (seconds / (60 * 60)).toFixed() + "hr " : "") + ((seconds / 60) % 60).toFixed() + "min";
 }
 
 function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -282,10 +252,7 @@ function areEqual(prevProps: Props, nextProps: Props): boolean {
   if (!prevProps.plane && !nextProps.plane) {
     return prevProps.totalPlanes === nextProps.totalPlanes;
   }
-  return (
-    prevProps.plane?.icao24 === nextProps.plane?.icao24 ||
-    prevProps.plane?.trueTrack === nextProps.plane?.trueTrack
-  );
+  return prevProps.plane?.icao24 === nextProps.plane?.icao24 || prevProps.plane?.trueTrack === nextProps.plane?.trueTrack;
 }
 
 export default memo(SideBar, areEqual);
