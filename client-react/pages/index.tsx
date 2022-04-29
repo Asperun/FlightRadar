@@ -16,9 +16,7 @@ const Index = ({ data }: Props): JSX.Element => {
     <Layout title={title} description={description}>
       <div className={"grid h-screen max-w-screen max-w-full max-h-screen group overflow-hidden"}>
         <svg
-          className={
-            "w-screen h-screen absolute -z-10 opacity-40 group-hover:-translate-x-1/2 transition-all duration-[600000ms] ease-linear"
-          }
+          className={"w-screen max-w-full max-h-screen h-screen absolute -z-10 opacity-40 group-hover:-translate-x-1/2 transition-all duration-[600000ms] ease-linear"}
           id="visual"
           viewBox="0 0 960 540"
           width="960"
@@ -67,11 +65,9 @@ const Index = ({ data }: Props): JSX.Element => {
           </div>
           <div className="border-white border-b-2 pb-4 w-1/2 sm:w-1/2 md:w-2/3 mx-auto opacity-80" />
           <p className="bg-dark-el-1 rounded-xl mt-6 text-xl md:text-2xl text-slate-300 tracking-wide p-3">
-            Currently tracking{" "}
-            <span className="text-sky-400 tracking-normal">{data?.totalPlanes ?? 0}</span> aircraft
-            with <span className="text-sky-400">{data?.totalFlights ?? 0}</span> flights and{" "}
-            <span className="text-sky-400">{data?.totalCheckpoints ?? 0}</span> checkpoints across{" "}
-            <span className="text-sky-400">2</span> regions
+            Currently tracking <span className="text-sky-400 tracking-normal">{data?.totalPlanes ?? 0}</span> aircraft with{" "}
+            <span className="text-sky-400">{data?.totalFlights ?? 0}</span> flights and{" "}
+            <span className="text-sky-400">{data?.totalCheckpoints ?? 0}</span> checkpoints across <span className="text-sky-400">2</span> regions
           </p>
           <div className={"p-4 mt-4"}>
             <Link href="/map">
