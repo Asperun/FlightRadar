@@ -14,7 +14,7 @@ const LinearGraph = ({ data }: Props): JSX.Element | null => {
   return (
     <ResponsiveLine
       data={data}
-      margin={{ top: 50, right: 25, bottom: 50, left: 50 }}
+      margin={{ top: 50, right: 25, bottom: 70, left: 50 }}
       xScale={{ type: "point" }}
       colors={{ scheme: "nivo" }}
       curve={"monotoneX"}
@@ -59,8 +59,6 @@ const LinearGraph = ({ data }: Props): JSX.Element | null => {
           line: {
             stroke: "gray",
             strokeWidth: 0.2,
-            // strokeDasharray: "4 4"
-            // strokeDasharray: "2 2"
           },
         },
       }}
@@ -83,8 +81,6 @@ const LinearGraph = ({ data }: Props): JSX.Element | null => {
         legendPosition: "middle",
       }}
       axisLeft={{
-        //@ts-ignore
-        // orient: "left",
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
@@ -128,5 +124,4 @@ const LinearGraph = ({ data }: Props): JSX.Element | null => {
   );
 };
 
-// do not rerender with parent coz data will never change
 export default memo(LinearGraph, () => true);
