@@ -9,7 +9,7 @@ import {
   mapHourlyPerRegionToGraph,
   mapHourlyToGraph,
   mapRegisteredToGraph,
-} from "../service/requestHelper";
+} from "../service/requestUtils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -22,7 +22,6 @@ type Props = {
   hourlyPerRegion: LinearGraphData[];
 };
 
-// dynamically load graph components to reduce initial load time
 const DynamicLinearGraph = dynamic(() => import("../components/LinearGraph"), {
   ssr: false,
 });
@@ -33,20 +32,12 @@ const DynamicGeoMap = dynamic(() => import("../components/GeoMap"), {
 const Stats = ({ hourly, registered, hourlyPerRegion }: Props): JSX.Element => {
   return (
     <Layout title={title} description={description}>
-      <NavBar
-        className="flex opacity-80
-      gap-4 lg:gap-8
-      lg:justify-end lg:py-8 lg:pr-24
-      py-6 pl-8 w-full"
-      />
+      <NavBar className="flex opacity-80  gap-4 lg:gap-8 lg:justify-end lg:py-8 lg:pr-24 py-6 pl-8 w-full" />
       <main className={"grid my-16 sm:my-24 w-screen max-w-full"}>
-        <div
-          className={"container p-1 sm:p-2 max-w-full sm:max-w-7xl flex flex-col gap-24 sm:gap-32"}
-        >
+        <div className={"container p-1 sm:p-2 max-w-full sm:max-w-7xl flex flex-col gap-24 sm:gap-32"}>
           <div className={"px-6 py-12 bg-dark-el-1 rounded-md bg-opacity-70"}>
             <h2 className={"text-2xl p-4"}>
-              The graph below shows how many unique aircraft were in the air at the same time in a
-              specific hour; the data covers the past 48 hours.
+              The graph below shows how many unique aircraft were in the air at the same time in a specific hour; the data covers the past 48 hours.
             </h2>
             <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
               <div className={"h-[30rem] w-[600px] sm:w-full"}>
@@ -56,8 +47,8 @@ const Stats = ({ hourly, registered, hourlyPerRegion }: Props): JSX.Element => {
           </div>
           <div className={"sm:px-6 sm:py-12 bg-dark-el-1 rounded-md bg-opacity-70 overflow-auto"}>
             <h2 className={"text-xl sm:text-2xl p-4"}>
-              The graph below illustrates how many distinct airplanes were in the air at the same
-              time in Europe and North America at a certain hour; the data covers the past 24 hours.
+              The graph below illustrates how many distinct airplanes were in the air at the same time in Europe and North America at a certain hour;
+              the data covers the past 24 hours.
             </h2>
             <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
               <div className={"h-[30rem] w-[600px] sm:w-full"}>
@@ -67,8 +58,8 @@ const Stats = ({ hourly, registered, hourlyPerRegion }: Props): JSX.Element => {
           </div>
           <div className={"sm:px-6 sm:py-12 bg-dark-el-1 rounded-md bg-opacity-70"}>
             <h2 className={"text-2xl p-4"}>
-              The graph below depicts the number of unique planes registered in each nation
-              throughout the world; the data includes all planes tracked by application.
+              The graph below depicts the number of unique planes registered in each nation throughout the world; the data includes all planes tracked
+              by application.
             </h2>
             <div className={"max-w-[360px] sm:max-w-full overflow-auto"}>
               <div className={"h-[36rem] w-[800px] sm:w-full"}>

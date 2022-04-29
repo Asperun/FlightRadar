@@ -1,14 +1,10 @@
 import { GeoGraphData, LinearGraphData } from "../types/graph";
 import { convertCountryToAlpha3Code } from "./countryUtils";
 
-const apiEndpoint =
-  process.env.NODE_ENV === "production"
-    ? "https://api.fantasea.pl/v1/planes"
-    : "http://localhost:5001/v1/planes";
-// const apiEndpoint = "https://api.fantasea.pl/v1/planes";
+const apiBase = process.env.NODE_ENV === "production" ? "https://api.fantasea.pl/v1/planes" : "http://localhost:5001/v1/planes";
 
 export async function fetchSidePanelStats() {
-  const response = await fetch(`${apiEndpoint}/stats/global`);
+  const response = await fetch(`${apiBase}/stats/global`);
   if (response.ok) {
     return await response.json();
   }
@@ -16,19 +12,19 @@ export async function fetchSidePanelStats() {
 }
 
 export function getHourlyGraphData(): Promise<any> {
-  return fetch(`${apiEndpoint}/stats/hourly?pastDays=1`);
+  return fetch(`${apiBase}/stats/hourly?pastDays=1`);
 }
 
 export function getHourlyPerRegionGraphData(): Promise<any> {
-  return fetch(`${apiEndpoint}/stats/hourlyperregion`);
+  return fetch(`${apiBase}/stats/hourlyperregion`);
 }
 
 export function getRegisteredPlanesGraphData(): Promise<any> {
-  return fetch(`${apiEndpoint}/stats/registered`);
+  return fetch(`${apiBase}/stats/registered`);
 }
 
-export function getMainStats(): Promise<any> {
-  return fetch(`${apiEndpoint}/stats/main`);
+export function getLandingPageStats(): Promise<any> {
+  return fetch(`${apiBase}/stats/main`);
 }
 
 export async function fetchPlaneImage(icao24: string) {
@@ -49,14 +45,9 @@ export async function fetchPlaneImage(icao24: string) {
   return null;
 }
 
-export async function fetchManufactuerDetails(icao24: string) {
+export async function fetchManufacturerDetails(icao24: string) {
   try {
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_DOMAIN_NAME + `/api/details?icao24=${icao24}`
-    );
-    // const response = await fetch(
-    // `http://localhost:3000/flight-tracker/api/details?icao24=${icao24}`
-    // );
+    const response = await fetch(process.env.NEXT_PUBLIC_DOMAIN_NAME + `/api/details?icao24=${icao24}`);
     if (response.ok) {
       return await response.json();
     }
@@ -68,7 +59,7 @@ export async function fetchManufactuerDetails(icao24: string) {
 
 export async function fetchTrackDetails(icao24: string) {
   try {
-    const response = await fetch(`${apiEndpoint}/icao24/${icao24}?checkpoints=true`);
+    const response = await fetch(`${apiBase}/icao24/${icao24}?checkpoints=true`);
     if (response.ok) {
       return await response.json();
     }
@@ -78,19 +69,11 @@ export async function fetchTrackDetails(icao24: string) {
   return null;
 }
 
-export function subscribeToPlaneUpdates(
-  minLat: number,
-  minLong: number,
-  maxLat: number,
-  maxLong: number,
-  limit: number = 200
-): EventSource {
-  return new EventSource(
-    `${apiEndpoint}/subscribe?minLat=${minLat}&minLong=${minLong}&maxLat=${maxLat}&maxLong=${maxLong}&limit=${limit}`
-  );
+export function subscribeToUpdates(minLat: number, minLong: number, maxLat: number, maxLong: number, limit: number = 200): EventSource {
+  return new EventSource(`${apiBase}/subscribe?minLat=${minLat}&minLong=${minLong}&maxLat=${maxLat}&maxLong=${maxLong}&limit=${limit}`);
 }
 
-// one day i will rewrite this too
+// one day i will rewrite this
 export function mapHourlyToGraph(hourly: any): LinearGraphData[] | null {
   if (!hourly) {
     return null;

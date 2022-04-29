@@ -1,9 +1,9 @@
-﻿import { memo, ReactElement, useEffect, useState } from "react";
-import { fetchSidePanelStats } from "../service/requestHelper";
-import { convertCountryToAlpha2Code } from "../service/countryUtils";
-import { PlaneDetails } from "../types/plane";
+﻿import {memo, ReactElement, useEffect, useState} from "react";
+import {fetchSidePanelStats} from "../service/requestUtils";
+import {convertCountryToAlpha2Code} from "../service/countryUtils";
+import {PlaneDetails} from "../types/plane";
 import Image from "next/image";
-import { blurredShimmer } from "../service";
+import {blurredShimmer} from "../service";
 
 type Props = {
   plane?: PlaneDetails;
@@ -12,8 +12,8 @@ type Props = {
   loading?: boolean;
 };
 
-// one day i will rewrite this
-const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.Element => {
+// todo: rewrite to use day.js
+const SideBar = ({plane, totalPlanes, setSelectedPlane, loading}: Props): JSX.Element => {
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
   function RenderPlaneSidebar(): ReactElement {
     const planeManufactuer: string = plane?.manufacturerIcao
       ? plane.manufacturerIcao?.charAt(0) + plane.manufacturerIcao?.substring(1).toLowerCase()
-      : "unknown";
+      : "Unknown";
 
     let timeSinceStart: string | undefined;
     let distanceSinceStart: number | undefined;
@@ -59,7 +59,7 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
           (Date.parse(new Date().toUTCString()) -
             3600000 -
             Date.parse(checkpoints[0].creationTime as unknown as string)) /
-            1000
+          1000
         )
       );
 
@@ -187,7 +187,6 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
                 Direction`
               </div>
               <div>
-                {/*<p className={"text-orange-600"}>{dbPlaneInfo.data && Math.abs((Date.now() - dbPlaneInfo.data.lastContact) / 1000).toFixed()  + "s" || "?"}</p>*/}
                 <p className={"text-orange-600"}>{"?"}</p>
                 Updated
               </div>
@@ -214,29 +213,20 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
               </div>
               <div>
                 <p className={"text-orange-600"}>
-                  {(plane?.flights && plane.flights.length > 0 && plane.flights[0].checkpoints.length > 0 &&
-                    Math.floor(
-                      (plane?.flights[0].checkpoints.reduce(
-                        (total, next) => total + next.velocity,
-                        0
-                      ) /
-                        plane.flights[0]?.checkpoints.length) *
-                        3.6
-                    ) + "km/h") ||
-                    "?"}
+                  {(plane?.flights &&
+                      plane.flights.length > 0 &&
+                      plane.flights[0].checkpoints.length > 0 &&
+                      Math.floor(
+                        (plane?.flights[0].checkpoints.reduce((total, next) => total + next.velocity, 0) / plane.flights[0]?.checkpoints.length) * 3.6) + "km/h") || "?"}
                 </p>
                 Avg speed
               </div>
               <div>
                 <p className={"text-orange-600"}>
-                  {(plane?.flights && plane.flights.length > 0 && plane.flights[0].checkpoints.length > 0 &&
-                    Math.floor(
-                      plane.flights[0].checkpoints.reduce(
-                        (total, next) => total + next.altitude,
-                        0
-                      ) / plane.flights[0]?.checkpoints.length
-                    ) + "m") ||
-                    "?"}
+                  {(plane?.flights &&
+                      plane.flights.length > 0 &&
+                      plane.flights[0].checkpoints.length > 0 &&
+                      Math.floor(plane.flights[0].checkpoints.reduce((total, next) => total + next.altitude, 0) / plane.flights[0]?.checkpoints.length) + "m") || "?"}
                 </p>
                 Avg Altitude
               </div>
@@ -248,7 +238,6 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
   }
 
   function RenderGenericSideBar() {
-    // const stats = await useSidePanelStats();
     if (!stats) return null;
 
     return (
@@ -277,22 +266,14 @@ const SideBar = ({ plane, totalPlanes, setSelectedPlane, loading }: Props): JSX.
   }
 };
 
-// Convert seconds to time string
 function convertSeconds(seconds: number): string {
-  return (
-    (Math.floor(seconds / (60 * 60)) > 0 ? (seconds / (60 * 60)).toFixed() + "hr " : "") +
-    ((seconds / 60) % 60).toFixed() +
-    "min"
-  );
-  // convert(seconds % 60)+"s"
+  return ((Math.floor(seconds / (60 * 60)) > 0 ? (seconds / (60 * 60)).toFixed() + "hr " : "") + ((seconds / 60) % 60).toFixed() + "min");
 }
 
-// Calculates distance between two coords
 function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const p = 0.017453292519943295; // Math.PI / 180
   const c = Math.cos;
-  const a =
-    0.5 - c((lat2 - lat1) * p) / 2 + (c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))) / 2;
+  const a = 0.5 - c((lat2 - lat1) * p) / 2 + (c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))) / 2;
 
   return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
 }

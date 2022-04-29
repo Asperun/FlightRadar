@@ -63,5 +63,4 @@ const GeoMap = ({ data }: Props): JSX.Element | null => {
   );
 };
 
-// same as LinearGraph
 export default memo(GeoMap, () => true);

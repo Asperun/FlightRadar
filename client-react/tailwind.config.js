@@ -15,9 +15,8 @@ module.exports = {
       colors: {
         "dark": "#1A1A1A",
         "white-100": "#F5F6F7",
-        "dark-el-1": "#282828", // el stands for elevation
+        "dark-el-1": "#282828",
       },
     },
   },
-  plugins: [require("@tailwindcss/typography")],
 };

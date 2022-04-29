@@ -2,7 +2,7 @@ import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import Layout from "../components/Layout";
-import { getMainStats } from "../service/requestHelper";
+import { getLandingPageStats } from "../service/requestUtils";
 
 const title = "Flight Tracker - Interactive Map";
 const description = "Real-time representation of flying planes on an interactive map";
@@ -17,7 +17,7 @@ const Index = ({ data }: Props): JSX.Element => {
       <div className={"grid h-screen max-w-screen max-w-full max-h-screen group overflow-hidden"}>
         <svg
           className={
-            "w-screen h-screen max-w-full max-h-full absolute -z-10 opacity-40 group-hover:-translate-x-1/2 transition-all duration-[600000ms] ease-linear "
+            "w-screen h-screen absolute -z-10 opacity-40 group-hover:-translate-x-1/2 transition-all duration-[600000ms] ease-linear"
           }
           id="visual"
           viewBox="0 0 960 540"
@@ -99,7 +99,7 @@ const Index = ({ data }: Props): JSX.Element => {
 export async function getStaticProps() {
   let data = null;
   try {
-    const response = await getMainStats();
+    const response = await getLandingPageStats();
     data = response.ok ? await response.json() : null;
   } catch (e) {
     console.log(e);
