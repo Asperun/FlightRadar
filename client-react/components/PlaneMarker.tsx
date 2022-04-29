@@ -15,7 +15,6 @@ type Props = {
 const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
   const [tooltip, setTooltip] = useState<boolean>(false);
 
-  // Only update icon if plane rotated more than 5 degree or has been selected
   const orangePlaneIcon: DivIcon = useMemo(
     () =>
       divIcon({
@@ -23,7 +22,7 @@ const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
         iconSize: [32, 32],
         html: renderToString(<MarkerIcon />),
       }),
-    [Math.floor(plane.trueTrack / 5), plane.isSelected]
+    [Math.floor(plane.trueTrack % 5) === 0, plane.isSelected]
   );
 
   function MarkerIcon(): ReactElement {
@@ -70,6 +69,9 @@ const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
 };
 
 function areEqual(prevProps: Props, nextProps: Props): boolean {
+  if (nextProps.plane.isSelected) {
+    return false;
+  }
   return (
     prevProps.plane.longitude === nextProps.plane.longitude &&
     prevProps.plane.latitude === nextProps.plane.latitude &&
@@ -78,5 +80,3 @@ function areEqual(prevProps: Props, nextProps: Props): boolean {
 }
 
 export default memo(PlaneMarker, areEqual);
-
-// export default PlaneMarker;

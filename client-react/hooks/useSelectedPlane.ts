@@ -1,68 +1,55 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plane, PlaneDetails } from "../types/plane";
 import {
-  fetchManufactuerDetails,
+  fetchManufacturerDetails,
   fetchPlaneImage,
   fetchTrackDetails,
-} from "../service/requestHelper";
+} from "../service/requestUtils";
 
 export const useSelectedPlane = () => {
-  // This is our internal state
   const [selectedPlane, setSelectedPlane] = useState<PlaneDetails | null>(null);
-
-  // This is our external state to expose to the rest of the app
   const [planeDetails, setPlaneDetails] = useState<PlaneDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Update plane details everytime the selected plane changes
   useEffect(() => {
     if (!selectedPlane) return;
-    fetchAdditionalPlaneData();
+    fetchAdditionalPlaneData(selectedPlane.icao24);
     return () => {
       setSelectedPlane(null);
     };
   }, [selectedPlane]);
 
-  const fetchAdditionalPlaneData = async () => {
-    const icao24 = selectedPlane?.icao24;
-    if (!icao24) return;
+  const fetchAdditionalPlaneData = async (icao24: string) => {
+    if (!icao24) throw new Error("No ICAO24 provided");
     setLoading(true);
 
-    // we need to make 3 fetch requests to get the all plane details
+    // We need to make 3 fetch requests to get the all needed plane data and merge it into one object, then mark it as selected
     // 1. PlaneSpotterApi - for picture
-    // 2. OpenSkyNetwork - for plane manufacture details
+    // 2. OpenSkyNetwork - for plane manufacturer details
     // 3. Fantasea backend - for track details
-    // 4. Merge all responses into one object and expose
     const imagePromise = fetchPlaneImage(icao24);
-    const manufacturerPromise = fetchManufactuerDetails(icao24);
+    const manufacturerPromise = fetchManufacturerDetails(icao24);
     const trackPromise = fetchTrackDetails(icao24);
 
-    // Make 3 requests
-    // Sometimes one of them returns null, but it's ok
     const [imageData, manufacturerData, trackData] = await Promise.all([
       imagePromise,
       manufacturerPromise,
       trackPromise,
     ]);
 
-    // if(icao24 !== selectedPlane?.icao24) { setLoading(false); return}; // second check if the plane has changed
-
-    const temp: PlaneDetails = {
+    const merged: PlaneDetails = {
       ...imageData,
       ...manufacturerData,
       ...trackData,
       isSelected: true,
     };
 
-    console.log(temp);
-
-    setPlaneDetails(temp);
-
+    setPlaneDetails(merged);
     setLoading(false);
   };
 
   const setSelectedPlaneFromOutside = (plane: PlaneDetails | null) => {
-    if (loading) return; // don't update if we are fetching
+    if (loading) return;
     setSelectedPlane(plane);
     if (plane === null) setPlaneDetails(null);
   };
@@ -72,13 +59,13 @@ export const useSelectedPlane = () => {
     return planeDetails;
   };
 
-  const updateSelectedPlaneFromOutside = (plane: Plane) => {
-    console.log("updated object", { ...planeDetails, ...plane }.longitude);
+  const updateSelectedPlaneFromOutside = (plane: Plane): void => {
     if (loading) return;
-    // let currentPlane = planeDetails
-    // currentPlane.latitude = plane.latitude
-    // currentPlane.longitude = plane.longitude
-    // setPlaneDetails({...planeDetails,latitude:plane.latitude,longitude:plane.longitude})
+    setPlaneDetails({
+      ...planeDetails,
+      longitude: plane.longitude,
+      latitude: plane.latitude,
+    } as PlaneDetails);
   };
 
   return {

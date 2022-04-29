@@ -1,8 +1,8 @@
 import { MapContainer, Polyline, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
-import { memo, useRef, useState } from "react";
-import { subscribeToPlaneUpdates } from "../service/requestHelper";
+import { memo, useEffect, useRef, useState } from "react";
+import { subscribeToUpdates } from "../service/requestUtils";
 import { MapData, Plane } from "../types/plane";
 import dynamic from "next/dynamic";
 import { useSelectedPlane } from "../hooks/useSelectedPlane";
@@ -10,7 +10,6 @@ import { useRouter } from "next/router";
 import { Map as LeafletMap } from "leaflet";
 import { getPath } from "../service";
 
-// Split conditionaly rendered components to separate chunks
 const DynamicSideBar = dynamic(() => import("./SideBar"), { ssr: false });
 const DynamicMarker = dynamic(() => import("./PlaneMarker"), { ssr: false });
 
@@ -23,6 +22,16 @@ const InteractiveMap = (): JSX.Element => {
   const [mapData, setMapData] = useState<MapData>({ planes: [], amountReceived: 0 });
   const router = useRouter();
 
+  useEffect(() => {
+    if (selectedPlane) {
+      const selectedPlaneIndex = mapData.planes.findIndex((p) => p.icao24 === selectedPlane.icao24);
+      if (selectedPlaneIndex !== -1) {
+        const matchedPlane = mapData.planes[selectedPlaneIndex];
+        updateSelectedPlane(matchedPlane);
+      }
+    }
+  }, [mapData]);
+
   const updateCoordinates = () => {
     const currentMap = mapRef.current;
     if (!currentMap) return;
@@ -34,31 +43,23 @@ const InteractiveMap = (): JSX.Element => {
       eventSource.close();
     }
 
-    const newStream = subscribeToPlaneUpdates(
+    const newStream = subscribeToUpdates(
       bounds.getSouthWest().lat,
       bounds.getSouthWest().lng,
       bounds.getNorthEast().lat,
       bounds.getNorthEast().lng,
       maxPlanesToFetch
     );
-    newStream.onmessage = processData;
+    newStream.onmessage = processServerResponse;
 
     setEventSource(newStream);
   };
 
   const selectedPlane = getSelectedPlane();
 
-  const processData = (e: { data: string }): void => {
+  const processServerResponse = (e: { data: string }): void => {
     const response: Plane[] = JSON.parse(e.data).planes;
     const planesReceived: number = response.length;
-
-    if (selectedPlane) {
-      const selectedPlaneIndex = response.findIndex((p) => p.icao24 === selectedPlane.icao24);
-      if (selectedPlaneIndex !== -1) {
-        const matchedPlane = response[selectedPlaneIndex];
-        updateSelectedPlane(matchedPlane);
-      }
-    }
     setMapData({ planes: response, amountReceived: planesReceived });
   };
 
@@ -73,13 +74,12 @@ const InteractiveMap = (): JSX.Element => {
       );
 
       if (selectedPlaneIndex > -1) {
-        // recentFetchedPlanes[selectedPlaneIndex].isSelected = true;
         recentFetchedPlanes.splice(selectedPlaneIndex, 1);
       }
 
       currentSelected = (
         <DynamicMarker
-          key={selectedPlane?.icao24}
+          key={selectedPlane.icao24}
           plane={selectedPlane}
           setSelectedPlane={setSelectedPlane}
         />
@@ -88,15 +88,10 @@ const InteractiveMap = (): JSX.Element => {
 
     return [
       currentSelected,
-      ...recentFetchedPlanes.map((plane: Plane, i: number) => {
+      ...recentFetchedPlanes.map((plane) => {
         return (
           plane.callSign && (
-            <DynamicMarker
-              // key={i}
-              key={plane.icao24}
-              plane={plane}
-              setSelectedPlane={setSelectedPlane}
-            />
+            <DynamicMarker key={plane.icao24} plane={plane} setSelectedPlane={setSelectedPlane} />
           )
         );
       }),
