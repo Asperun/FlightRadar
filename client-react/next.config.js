@@ -1,9 +1,3 @@
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
-
-const withPreact = require("next-plugin-preact");
-
 module.exports = {
   basePath: "/flight-tracker",
   swcMinify: true,
@@ -19,7 +13,7 @@ module.exports = {
   },
   images: {
     domains: ["cdn.jetphotos.com", "hatscripts.github.io", "cdn.planespotters.net"],
-    formats: ["image/avif", "image/webp"],
+    formats: ["image/webp"],
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -27,4 +21,4 @@ module.exports = {
 };
 
 // module.exports = withBundleAnalyzer(module.exports);
-module.exports = withPreact(module.exports);
+// module.exports = withPreact(module.exports);
