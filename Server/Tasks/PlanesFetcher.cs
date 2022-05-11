@@ -88,30 +88,37 @@ public class PlanesFetcher : IHostedService, IDisposable
     /// <param name="callback">Callback delegate for post-fetching tasks</param>
     private async void FetchPlanes(object? state, FetchCallback callback)
     {
-        using (var httpResponseMessage = await SendFetchRequest())
+        try
         {
-            if (!httpResponseMessage.IsSuccessStatusCode)
+            using (var httpResponseMessage = await SendFetchRequest())
             {
-                logger.LogWarning("Fetch failed - OpenSkyApi bad response");
-                return;
-            }
-
-            await using (var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync())
-            {
-                if (!contentStream.CanRead || contentStream.Length <= 0) return;
-                var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
-
-                if (response == null)
+                if (!httpResponseMessage.IsSuccessStatusCode)
                 {
-                    logger.LogWarning("Fetch failed - Response was null");
+                    logger.LogWarning("Fetch failed - OpenSkyApi bad response");
                     return;
                 }
 
-                var recentPlanes = response.ToModelList();
+                await using (var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync())
+                {
+                    if (!contentStream.CanRead || contentStream.Length <= 0) return;
+                    var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
 
-                if (recentPlanes.Count > 0)
-                    await callback(recentPlanes);
+                    if (response == null)
+                    {
+                        logger.LogWarning("Fetch failed - Response was null");
+                        return;
+                    }
+
+                    var recentPlanes = response.ToModelList();
+
+                    if (recentPlanes.Count > 0)
+                        await callback(recentPlanes);
+                }
             }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Fetch failed");
         }
     }
 
