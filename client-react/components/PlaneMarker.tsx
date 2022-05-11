@@ -3,13 +3,12 @@ import { DivIcon, divIcon } from "leaflet";
 import planeImgOrange from "../public/plane-orange.webp";
 import { memo, ReactElement, useMemo, useState } from "react";
 import ReactLeafletDriftMarker from "react-leaflet-drift-marker";
-import { Plane } from "../types/plane";
-import { renderToString } from "preact-render-to-string";
-import Image from "next/image";
+import { Plane, PlaneDetails } from "../types/plane";
+import { renderToString } from "react-dom/server";
 
 type Props = {
   plane: Plane;
-  setSelectedPlane: any;
+  setSelectedPlane: (plane: PlaneDetails | null) => void;
 };
 
 const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
@@ -27,42 +26,40 @@ const PlaneMarker = ({ plane, setSelectedPlane }: Props): JSX.Element => {
 
   function MarkerIcon(): ReactElement {
     return (
-      <div>
-        <Image
-          priority
-          layout={"fixed"}
-          width="32"
-          height="32"
-          style={{ transform: `rotate(${plane.trueTrack}deg)` }}
-          className={`hover:hue-rotate-60 click:hue-rotate-60 overflow-hidden ${plane.isSelected === true && "hue-rotate-90"}`}
-          src={planeImgOrange}
-          alt="plane.png"
-        />
-      </div>
+      // <div>
+      <img
+        // priority
+        // layout={"fixed"}
+        width="32px"
+        height="32px"
+        style={{ transform: `rotate(${plane.trueTrack}deg)` }}
+        className={`hover:hue-rotate-60 click:hue-rotate-60 overflow-hidden ${plane.isSelected === true && "hue-rotate-90"}`}
+        src={planeImgOrange.src}
+        alt="plane.webp"
+      />
+      // </div>
     );
   }
 
   return (
-    <>
-      <ReactLeafletDriftMarker
-        position={[plane.latitude, plane.longitude]}
-        icon={orangePlaneIcon}
-        eventHandlers={{
-          mouseover: (e) => {
-            setTooltip(true);
-          },
-          mouseout: (e) => {
-            setTooltip(false);
-          },
-          click: (e) => {
-            setSelectedPlane(plane);
-          },
-        }}
-        duration={8000}
-      >
-        {tooltip && <Tooltip direction={"top"}>{plane.callSign}</Tooltip>}
-      </ReactLeafletDriftMarker>
-    </>
+    <ReactLeafletDriftMarker
+      position={[plane.latitude, plane.longitude]}
+      icon={orangePlaneIcon}
+      eventHandlers={{
+        mouseover: (e) => {
+          setTooltip(true);
+        },
+        mouseout: (e) => {
+          setTooltip(false);
+        },
+        click: (e) => {
+          setSelectedPlane(plane as PlaneDetails);
+        },
+      }}
+      duration={8000}
+    >
+      {tooltip && <Tooltip direction={"top"}>{plane.callSign}</Tooltip>}
+    </ReactLeafletDriftMarker>
   );
 };
 

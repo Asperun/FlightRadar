@@ -16,11 +16,12 @@ const DynamicMarker = dynamic(() => import("./PlaneMarker"), { ssr: false });
 const DynamicMapSettings = dynamic(() => import("./MapSettings"), { ssr: false });
 
 const InteractiveMap = (): JSX.Element => {
-  const { setSelectedPlane, getSelectedPlane, updateSelectedPlane } = useSelectedPlane();
-  const { maxPlanes, showPaths, showLanded } = useMapSettings();
-  const mapRef = useRef<LeafletMap | null>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
   const [mapData, setMapData] = useState<MapData>({ planes: [], amountReceived: 0 });
+  const [error, setError] = useState<string | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const { setSelectedPlane, getSelectedPlane, updateSelectedPlane } = useSelectedPlane();
+  const { maxPlanes, showPaths, showLanded } = useMapSettings();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +33,12 @@ const InteractiveMap = (): JSX.Element => {
       }
     }
   }, [mapData]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      updateCoordinates();
+    }, 750);
+  }, []);
 
   const updateCoordinates = () => {
     const currentMap = mapRef.current;
@@ -53,6 +60,9 @@ const InteractiveMap = (): JSX.Element => {
       showLanded
     );
     newStream.onmessage = processServerResponse;
+    newStream.onerror = (e) => {
+      setError("Resource temporarily unavailable");
+    };
 
     setEventSource(newStream);
   };
@@ -88,6 +98,24 @@ const InteractiveMap = (): JSX.Element => {
     ];
   };
 
+  const renderPath = () => {
+    if (!selectedPlane || !selectedPlane.flights || selectedPlane.flights.length === 0 || !selectedPlane.flights[0].checkpoints) return null;
+    return (
+      <Polyline
+        interactive={false}
+        positions={getPath(selectedPlane)}
+        pathOptions={{
+          interactive: false,
+          color: "lime",
+          bubblingMouseEvents: false,
+          lineJoin: "round",
+          opacity: 0.8,
+          weight: 3,
+        }}
+      />
+    );
+  };
+
   // Base marker to handle mouse movement
   const LocationMarker = memo(
     function LocationMarker() {
@@ -111,10 +139,7 @@ const InteractiveMap = (): JSX.Element => {
         scrollWheelZoom={true}
         minZoom={3}
         preferCanvas={true}
-        whenCreated={(mapInstance) => {
-          mapRef.current = mapInstance;
-          updateCoordinates();
-        }}
+        ref={mapRef}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
@@ -122,21 +147,8 @@ const InteractiveMap = (): JSX.Element => {
           attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
         />
         <LocationMarker />
-        {renderPlanes()}
-        {selectedPlane && showPaths && selectedPlane.flights && selectedPlane.flights.length > 0 && selectedPlane.flights[0].checkpoints && (
-          <Polyline
-            interactive={false}
-            positions={getPath(selectedPlane)}
-            pathOptions={{
-              interactive: false,
-              color: "lime",
-              bubblingMouseEvents: false,
-              lineJoin: "round",
-              opacity: 0.8,
-              weight: 3,
-            }}
-          />
-        )}
+        {error ? <h1>{error}</h1> : renderPlanes()}
+        {!error && showPaths && renderPath()}
       </MapContainer>
       <DynamicSideBar plane={selectedPlane || undefined} setSelectedPlane={setSelectedPlane} totalPlanes={mapData.amountReceived} />
       <DynamicMapSettings className={"absolute flex flex-col gap-4 justify-center items-end w-44 top-5 right-5 z-[99999]"} />
