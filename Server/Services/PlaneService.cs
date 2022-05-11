@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using EFCore.BulkExtensions;
 using FlightRadar.Data;
 using FlightRadar.Data.Projections;
@@ -15,8 +14,9 @@ namespace FlightRadar.Services;
 /// </summary>
 public class PlaneService
 {
-    private const float turnRadiusThreshold = 25f;
+    private const float turnRadiusThreshold = 25f, velocityThreshold = 25f, altitudeThreshold = 500;
     private static List<Plane> memoryPlaneList = new();
+
     private readonly ILogger<PlaneService> logger;
     private readonly PlaneBroadcaster planeBroadcaster;
     private readonly PlaneContext planeContext;
@@ -28,20 +28,12 @@ public class PlaneService
         this.logger = logger;
     }
 
-    /// <summary>
-    ///     Gets most recent aircraft from memory list
-    /// </summary>
-    /// <returns>Read only collection of aircraft</returns>
-    public static ReadOnlyCollection<Plane> GetCurrentPlanes()
-    {
-        return memoryPlaneList.AsReadOnly();
-    }
 
     /// <summary>
     ///     Fetches amount of aircraft grouped by country
     /// </summary>
     /// <returns>List of aircraft count grouped by country</returns>
-    public async Task<List<CountryAmountProjection>> GetRegisteredPerCountry()
+    public async Task<List<CountryAmountProjection>?> GetRegisteredPerCountry()
     {
         List<CountryAmountProjection>? countryAmountProjections = null;
 
@@ -66,17 +58,19 @@ public class PlaneService
     /// <param name="dateUtc">Date to look for</param>
     /// <param name="pastDays">Amount of days in the past to include</param>
     /// <returns></returns>
-    public async Task<List<DateAmountProjection>> GetHourlyAmountFromDate(DateTime dateUtc, int pastDays = 0)
+    public async Task<List<DateAmountProjection>?> GetHourlyAmountFromDate(DateTime dateUtc, int pastDays = 0)
     {
-        var startDate = new DateTime(dateUtc.Year, dateUtc.Month, dateUtc.Day).Subtract(new TimeSpan(pastDays, 0, 0, 0));
+        var startDate = new DateTime(dateUtc.Year, dateUtc.Month, dateUtc.Day)
+            .Subtract(new TimeSpan(pastDays, 0, 0, 0));
 
         List<DateAmountProjection>? dateAmountProjection = null;
         try
         {
-            dateAmountProjection = await planeContext.DateAmountProj
-                                                     .FromSqlInterpolated(DateAmountProjection.Query(startDate, dateUtc))
-                                                     .AsNoTracking()
-                                                     .ToListAsync();
+            dateAmountProjection = await planeContext
+                                         .DateAmountProj
+                                         .FromSqlInterpolated(DateAmountProjection.Query(startDate, dateUtc))
+                                         .AsNoTracking()
+                                         .ToListAsync();
         }
         catch (Exception e)
         {
@@ -103,7 +97,7 @@ public class PlaneService
             foreach (var coordinates in Globals.GetAllRegions)
             {
                 returnList.Add(await planeContext.DateAmountProj
-                                                 .FromSqlInterpolated($"Select DATE_PART('Day', creationtime)::integer as \"Day\", TRIM(TRAILING FROM to_char (creationtime, 'Month')) as \"Month\", DATE_PART('HOUR', creationtime)::integer  as \"Hour\", Count(distinct flightid)::integer     as \"Count\" from checkpoints where creationtime BETWEEN {startDate} and {dateUtc} and longitude Between {coordinates.MinLon} and {coordinates.MaxLon} and latitude between {coordinates.MinLat} and {coordinates.MaxLat} Group By to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime) Order BY to_char(creationtime, 'Month'), DATE_PART('Day', creationtime), DATE_PART('HOUR', creationtime)")
+                                                 .FromSqlInterpolated($"Select DATE_PART('Day', creation_time)::integer as \"Day\", TRIM(TRAILING FROM to_char (creation_time, 'Month')) as \"Month\", DATE_PART('HOUR', creation_time)::integer  as \"Hour\", Count(distinct flight_id)::integer     as \"Count\" from checkpoints where creation_time BETWEEN {startDate} and {dateUtc} and longitude Between {coordinates.MinLon} and {coordinates.MaxLon} and latitude between {coordinates.MinLat} and {coordinates.MaxLat} Group By to_char(creation_time, 'Month'), DATE_PART('Day', creation_time), DATE_PART('HOUR', creation_time) Order BY to_char(creation_time, 'Month'), DATE_PART('Day', creation_time), DATE_PART('HOUR', creation_time)")
                                                  .AsNoTracking()
                                                  .ToListAsync()
                               );
@@ -124,13 +118,19 @@ public class PlaneService
     /// <returns>Stats</returns>
     public async Task<GeneralStatsProjection> GetMainPageProjection()
     {
-        GeneralStatsProjection? statsProjection = null;
+        GeneralStatsProjection statsProjection = null!;
         try
         {
-            statsProjection = await planeContext.GeneralStatsProj
-                                                .FromSqlRaw(GeneralStatsProjection.Query)
-                                                .AsNoTracking()
-                                                .FirstAsync();
+            statsProjection = await planeContext
+                                    .Planes
+                                    .AsNoTracking()
+                                    .Select(p => new GeneralStatsProjection
+                                    {
+                                        TotalPlanes = planeContext.Planes.Count(),
+                                        TotalFlights = planeContext.Flights.Count(),
+                                        TotalCheckpoints = planeContext.Checkpoints.Count(),
+                                    })
+                                    .FirstAsync();
         }
         catch (Exception e)
         {
@@ -152,13 +152,20 @@ public class PlaneService
         try
         {
             if (withCheckpoints)
+            {
                 plane = await planeContext.Planes
                                           .AsNoTracking()
+                                          .AsSplitQuery()
                                           .Include(p => p.Flights.Where(f => !f.IsCompleted))
                                           .ThenInclude(f => f.Checkpoints)
                                           .FirstAsync(p => p.Icao24.Equals(icao24));
+            }
             else
-                plane = await planeContext.Planes.AsNoTracking().FirstAsync(p => p.Icao24.Equals(icao24));
+            {
+                plane = await planeContext.Planes
+                                          .AsNoTracking()
+                                          .FirstAsync(p => p.Icao24.Equals(icao24));
+            }
         }
         catch (Exception e)
         {
@@ -176,8 +183,8 @@ public class PlaneService
     /// <returns>True if in zone</returns>
     private static bool IsInArea(Plane plane, Coordinates coords)
     {
-        return plane.Longitude > coords.MinLon && plane.Longitude < coords.MaxLon
-                                               && plane.Latitude > coords.MinLat && plane.Latitude < coords.MaxLat;
+        return plane.Longitude >= coords.MinLon && plane.Longitude <= coords.MaxLon
+                                               && plane.Latitude >= coords.MinLat && plane.Latitude <= coords.MaxLat;
     }
 
 
@@ -198,7 +205,7 @@ public class PlaneService
                                 p.Count(i => IsInArea(i, Globals.NorthAmerica)),
                                 p.Count(i => IsInArea(i, Globals.Europe))
                                ))
-               .First();
+               .FirstOrDefault();
     }
 
 
@@ -210,50 +217,34 @@ public class PlaneService
     /// <param name="minLong">Minimal longitude boundary</param>
     /// <param name="maxLong">Maximal longitude boundary</param>
     /// <param name="maxPlanes">Amount limit</param>
+    /// <param name="showLanded">Show landed planes</param>
     /// <returns>List of planes in DTO form</returns>
     public List<PlaneListDto> GetInAreaAsync(float minLat, float minLong,
                                              float maxLat, float maxLong,
-                                             short maxPlanes)
+                                             short maxPlanes, bool showLanded = false)
     {
-        List<PlaneListDto>? planes = null;
-        try
-        {
-            if (memoryPlaneList.Any())
-                planes = memoryPlaneList
-                         .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
-                         .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat && plane.Longitude >= minLong && plane.Longitude <= maxLong)
-                         .Take(maxPlanes)
-                         .ToList();
-            else
-                planes = planeContext.Planes
-                                     .AsNoTracking()
-                                     .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
-                                     .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat && plane.Longitude >= minLong &&
-                                                     plane.Longitude <= maxLong)
-                                     .Take(maxPlanes)
-                                     .ToList();
-        }
-        catch (Exception e)
-        {
-            logger.LogWarning("{Message}", e.Message);
-        }
+        var planes = memoryPlaneList.AsEnumerable();
 
-        return planes;
+        if (!showLanded)
+            planes = planes.Where(p => !p.OnGround);
+
+        return planes
+               .Select(plane => new PlaneListDto(plane.Icao24, plane.CallSign, plane.Longitude, plane.Latitude, plane.TrueTrack))
+               .Where(plane => plane.Latitude >= minLat && plane.Latitude <= maxLat 
+                                                        && plane.Longitude >= minLong && plane.Longitude <= maxLong)
+               .Take(maxPlanes)
+               .ToList();
     }
 
     /// <summary>
     ///     Updates subscribers with new aircraft and current values in database
     /// </summary>
     /// <param name="planes">List of aircraft</param>
-    public async Task UpdatePlanes(List<Plane> planes) // avg ~1.8 sec for 7k updates
+    public async Task UpdatePlanes(List<Plane> planes)
     {
-        // 0. Update current singleton
         memoryPlaneList = planes;
-
-        // 1. Notify subscribers
         planeBroadcaster.Publish(planes);
 
-        // 2. Update database based on Icao24 hex string
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
@@ -288,8 +279,13 @@ public class PlaneService
     {
         return new Checkpoint
         {
-            FlightId = flightId, Altitude = plane.GeoAltitude, Latitude = plane.Latitude, Longitude = plane.Longitude, TrueTrack = plane.TrueTrack,
-            Velocity = plane.Velocity, VerticalRate = plane.VerticalRate
+            FlightId = flightId,
+            Altitude = plane.GeoAltitude,
+            Latitude = plane.Latitude,
+            Longitude = plane.Longitude,
+            TrueTrack = plane.TrueTrack,
+            Velocity = plane.Velocity,
+            VerticalRate = plane.VerticalRate
         };
     }
 
@@ -301,27 +297,56 @@ public class PlaneService
     public async Task UpdateCheckpoints(List<Plane> planes)
     {
         var stopwatch = new Stopwatch();
-
         stopwatch.Start();
         try
         {
             planeContext.ChangeTracker.AutoDetectChangesEnabled = false;
-            // 2s for 80k results... not bad compared to 34s from LINQ
-            var dbPlanes = await planeContext.PlaneLastCheckpointProj
-                                             .FromSqlRaw(PlaneLastCheckpointProj.Query)
+            var dbPlanes = await planeContext.Planes
                                              .AsNoTracking()
+                                             .Where(plane => memoryPlaneList
+                                                             .Select(p => p.Icao24)
+                                                             .Contains(plane.Icao24))
+                                             .Select(plane => new PlaneLastCheckpointProj
+                                             {
+                                                 Icao24 = plane.Icao24,
+                                                 TrueTrack = plane.TrueTrack,
+                                                 Velocity = plane.Velocity,
+                                                 Id = plane.Id,
+                                                 OnGround = plane.OnGround,
+                                                 FlightId = plane.Flights
+                                                                 .Where(f => !f.IsCompleted)
+                                                                 .Select(f => f.Id)
+                                                                 .First(),
+                                                 Latitude = plane.Latitude,
+                                                 Longitude = plane.Longitude,
+                                                 LastCheckpointTrueTrack = plane.Flights
+                                                                                .Where(f => !f.IsCompleted)
+                                                                                .Select(f => f.Checkpoints
+                                                                                              .OrderBy(cp => cp.Id)
+                                                                                              .Last()
+                                                                                              .TrueTrack)
+                                                                                .First()
+                                             })
+                                             .OrderBy(plane => plane.Icao24)
                                              .ToListAsync();
+
 
             stopwatch.Stop();
             logger.LogInformation("Query time={QueryTimeMs}ms, el={ListSize}", stopwatch.ElapsedMilliseconds, dbPlanes.Count);
 
-            var icaos = dbPlanes.Select(d => d.Icao24).ToList();
-            // 2. Binary comparison db list with memory list and update
+            if (dbPlanes.Count == 0)
+            {
+                logger.LogInformation("No planes found");
+                return;
+            }
+
+            logger.LogInformation("icaos={@Icaos}", dbPlanes.Count);
+            
             for (var i = planes.Count - 1; i-- > 0;)
             {
                 var memoryPlane = planes[i];
 
-                var index = icaos.BinarySearch(memoryPlane.Icao24);
+                var index = dbPlanes.BinaryFind(memoryPlane.Icao24, p => p.Icao24);
                 if (index < 0) continue;
 
                 var dbPlane = dbPlanes[index];
@@ -329,7 +354,9 @@ public class PlaneService
 
                 switch (memoryPlane.OnGround)
                 {
-                    case false when !hasActiveFlight && memoryPlane.Velocity > 100f: // in air but doesnt have flight and velocity higher than 40km/h
+                    case false
+                        when !hasActiveFlight && memoryPlane.Velocity > velocityThreshold
+                                              && memoryPlane.GeoAltitude > altitudeThreshold: // in air but doesnt have flight and velocity higher than 25kt/s
                     {
                         var newFlight = new Flight { PlaneId = dbPlane.Id };
                         planeContext.Flights.Add(newFlight);
@@ -340,7 +367,7 @@ public class PlaneService
                         planeContext.Flights.Update(new Flight { Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true });
                         break;
                     }
-                    case false when hasActiveFlight && memoryPlane.Velocity < 100f:
+                    case false when hasActiveFlight && (memoryPlane.Velocity < velocityThreshold || memoryPlane.GeoAltitude < altitudeThreshold):
                     {
                         planeContext.Flights.Update(new Flight { Id = dbPlane.FlightId.Value, PlaneId = dbPlane.Id, IsCompleted = true });
                         break;
@@ -357,6 +384,7 @@ public class PlaneService
 
                         if (Math.Abs(dbPlane.LastCheckpointTrueTrack.Value - memoryPlane.TrueTrack) > turnRadiusThreshold)
                             planeContext.Checkpoints.Add(checkpoint);
+                        
                         break;
                     }
                     case true when !hasActiveFlight: // On ground and idle
@@ -365,19 +393,8 @@ public class PlaneService
                     }
                 }
             }
-            
-            // 3. Update DB
-            // Bug in recent BulkSaveChanges where it instantly drops new temp tables.
+
             await planeContext.SaveChangesAsync();
-            // await planeContext.BulkSaveChangesAsync(new BulkConfig
-            // {
-            // WithHoldlock = false,
-            // TrackingEntities = false,
-            // UniqueTableNameTempDb = true,
-            // UseTempDB = true,
-            //
-            // BatchSize = 3000
-            // });
         }
         catch (Exception e)
         {
@@ -387,7 +404,7 @@ public class PlaneService
         {
             planeContext.ChangeTracker.AutoDetectChangesEnabled = true;
         }
-        
+
         logger.LogInformation("Bulk save Done!");
     }
 }
