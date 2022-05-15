@@ -1,7 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using FlightRadar.Data.Requests;
 using FlightRadar.Models;
 using FlightRadar.Services;
+using Microsoft.VisualBasic;
 
 namespace FlightRadar.Tasks;
 
@@ -14,6 +17,8 @@ public class PlanesFetcher : IHostedService, IDisposable
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ILogger<PlanesFetcher> logger;
     private readonly IServiceScopeFactory services;
+
+    private const string apiUrl = "https://opensky-network.org/api/states/all";
 
     private Timer task1 = null!;
     private Timer task2 = null!;
@@ -59,6 +64,7 @@ public class PlanesFetcher : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
+
     /// <summary>
     ///     Callback function used for updating current coordinates of a plane as delegate for post-fetching processing
     /// </summary>
@@ -86,34 +92,39 @@ public class PlanesFetcher : IHostedService, IDisposable
     /// </summary>
     /// <param name="state"></param>
     /// <param name="callback">Callback delegate for post-fetching tasks</param>
-    private async void FetchPlanes(object? state, FetchCallback callback)
+    /// <param name="attempts">Maximum amount of retries if request timeouts</param>
+    private async void FetchPlanes(object? state, FetchCallback callback, byte attempts=3)
     {
         try
         {
-            using (var httpResponseMessage = await SendFetchRequest())
+            using var httpResponseMessage = await SendFetchRequest();
+            if (!httpResponseMessage.IsSuccessStatusCode)
             {
-                if (!httpResponseMessage.IsSuccessStatusCode)
-                {
-                    logger.LogWarning("Fetch failed - OpenSkyApi bad response");
-                    return;
-                }
+                logger.LogWarning("Fetch failed - OpenSkyApi bad response");
+                return;
+            }
 
-                await using (var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync())
-                {
-                    if (!contentStream.CanRead || contentStream.Length <= 0) return;
-                    var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
+            await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
+            if (!contentStream.CanRead || contentStream.Length <= 0) return;
+            var response = await JsonSerializer.DeserializeAsync<OpenSkyRequest>(contentStream);
 
-                    if (response == null)
-                    {
-                        logger.LogWarning("Fetch failed - Response was null");
-                        return;
-                    }
+            if (response == null)
+            {
+                logger.LogWarning("Fetch failed - Response was null");
+                return;
+            }
 
-                    var recentPlanes = response.ToModelList();
+            var recentPlanes = response.ToModelList();
 
-                    if (recentPlanes.Count > 0)
-                        await callback(recentPlanes);
-                }
+            if (recentPlanes.Count > 0)
+                await callback(recentPlanes);
+        }
+        catch (TaskCanceledException e)
+        {
+            if (attempts > 0)
+            {
+                logger.LogError("Request timed out");
+                FetchPlanes(state, callback, --attempts);
             }
         }
         catch (Exception e)
@@ -128,13 +139,17 @@ public class PlanesFetcher : IHostedService, IDisposable
     /// <returns>Response</returns>
     private async Task<HttpResponseMessage> SendFetchRequest()
     {
-        var connectionString = string.Format("https://{0}:{1}@opensky-network.org/api/states/all",
-                                             configuration["OpenSkyApi:UserName"],
-                                             configuration["OpenSkyApi:Password"]);
-
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, connectionString);
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, apiUrl);
         var httpClient = httpClientFactory.CreateClient("OpenSky");
 
+        httpClient.Timeout = TimeSpan.FromSeconds(2);
+        httpClient.DefaultRequestVersion = new Version(2, 0);
+        httpClient.MaxResponseContentBufferSize = 8_000_000;
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                                                                                       Convert.ToBase64String(Encoding.ASCII
+                                                                                           .GetBytes($"{configuration["OpenSkyApi:UserName"]}:{configuration["OpenSkyApi:Password"]}")));
         return await httpClient.SendAsync(httpRequestMessage);
     }
 
