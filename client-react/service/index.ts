@@ -1,9 +1,11 @@
-import { PlaneDetails } from "../types/plane";
-import { LatLngExpression } from "leaflet";
-const BezierSpline = require("bezier-spline");
+import type { LatLngExpression } from 'leaflet';
+
+import type { PlaneDetails } from '../types/plane';
+
+const BezierSpline = require('bezier-spline');
 
 export function getPath(plane: PlaneDetails): LatLngExpression[][] {
-  const arr = plane.flights[0].checkpoints.map((checkpoint) => [checkpoint.latitude, checkpoint.longitude]);
+  const arr = plane.flights[0]!.checkpoints.map((checkpoint) => [checkpoint.latitude, checkpoint.longitude]);
   arr.push([plane.latitude, plane.longitude]);
   return processPath(arr);
 }
@@ -31,6 +33,6 @@ const shimmer = (w: number, h: number): string => `
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
 
-const toBase64 = (str: string): string => (typeof window === "undefined" ? Buffer.from(str).toString("base64") : window.btoa(str));
+const toBase64 = (str: string): string => (typeof window === 'undefined' ? Buffer.from(str).toString('base64') : window.btoa(str));
 
 export const blurredShimmer = (w: number, h: number) => `data:image/svg+xml;base64,${toBase64(shimmer(w, h))}`;

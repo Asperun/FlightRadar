@@ -1,12 +1,13 @@
-import { GeoGraphData, LinearGraphData } from "../types/graph";
-import { convertCountryToAlpha3Code } from "./countryUtils";
+import type { GeoGraphData, LinearGraphData } from '../types/graph';
+import { convertCountryToAlpha3Code } from './countryUtils';
 
-const apiBase = process.env.NODE_ENV === "production" ? "https://api.fantasea.pl/v1/planes" : "http://localhost:5001/v1/planes";
+// const apiBase = process.env.NODE_ENV === "production" ? "https://api.fantasea.pl/v1/planes" : "http://localhost:5001/v1/planes";
+const apiBase = 'https://api.fantasea.pl/v1/planes';
 
 export async function fetchSidePanelStats() {
   const response = await fetch(`${apiBase}/stats/global`);
   if (response.ok) {
-    return await response.json();
+    return response.json();
   }
   return null;
 }
@@ -35,24 +36,24 @@ export async function fetchPlaneImage(icao24: string) {
       if (photos.length > 0) {
         return {
           url: photos[0].thumbnail_large.src,
-          photographer: photos[0].photographer,
+          photographer: photos[0].photographer
         };
       }
     }
   } catch (e) {
-    console.log("Error fetching plane image", e);
+    console.log('Error fetching plane image', e);
   }
   return null;
 }
 
 export async function fetchManufacturerDetails(icao24: string) {
   try {
-    const response = await fetch(process.env.NEXT_PUBLIC_DOMAIN_NAME + `/api/details?icao24=${icao24}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/api/details?icao24=${icao24}`);
     if (response.ok) {
       return await response.json();
     }
   } catch (e) {
-    console.log("Error fetching plane image", e);
+    console.log('Error fetching plane image', e);
   }
   return null;
 }
@@ -64,7 +65,7 @@ export async function fetchTrackDetails(icao24: string) {
       return await response.json();
     }
   } catch (e) {
-    console.log("Error fetching plane image", e);
+    console.log('Error fetching plane image', e);
   }
   return null;
 }
@@ -88,57 +89,63 @@ export function mapHourlyToGraph(hourly: any): LinearGraphData[] | null {
     return null;
   }
 
-  const hourlyGrouped = groupBy(hourly, "day");
+  const hourlyGrouped = groupBy(hourly, 'day');
   const returnArray: LinearGraphData[] = [];
 
-  for (let newArrKey in hourlyGrouped) {
+  Object.keys(hourlyGrouped).forEach((newArrKey) => {
     returnArray.push({
-      id: hourlyGrouped[newArrKey][0].month + " " + newArrKey,
+      // @ts-ignore
+      id: `${hourlyGrouped[newArrKey][0].month} ${newArrKey}`,
+      // @ts-ignore
       data: hourlyGrouped[newArrKey].map((arrObj: any) => {
         return {
           x: arrObj.hour,
-          y: arrObj.count,
+          y: arrObj.count
         };
-      }),
+      })
     });
-  }
-
+  });
   return returnArray;
 }
 
 export function mapHourlyPerRegionToGraph(hourlyPerRegion: any): LinearGraphData[] {
-  const regionNames: string[] = ["Europe", "North America"];
+  const regionNames: string[] = ['Europe', 'North America'];
   const returnArray: LinearGraphData[] = [];
 
-  for (let k = 0; k < hourlyPerRegion.length; k++) {
-    const grouped = groupBy(hourlyPerRegion[k], "day");
-    for (let newArrKey in grouped) {
+  for (let k = 0; k < hourlyPerRegion.length; k += 1) {
+    const grouped = groupBy(hourlyPerRegion[k], 'day');
+    Object.keys(grouped).forEach((newArrKey) => {
       returnArray.push({
+        // @ts-ignore
         id: regionNames.pop(),
+        // @ts-ignore
         data: grouped[newArrKey].map((arrObj) => {
           return {
             x: arrObj.hour,
-            y: arrObj.count,
+            y: arrObj.count
           };
-        }),
+        })
       });
-    }
+    });
   }
   return returnArray;
 }
 
 export function mapRegisteredToGraph(registered: any): GeoGraphData[] {
-  return registered.map((obj) => ({
+  return registered.map((obj: { country: string; count: any }) => ({
     id: convertCountryToAlpha3Code(obj.country),
-    value: obj.count,
+    value: obj.count
   }));
 }
 
 function groupBy(arr: [], property: string) {
   return arr.reduce(function (memo, x) {
     if (!memo[x[property]]) {
+      // @ts-ignore
+      // eslint-disable-next-line no-param-reassign
       memo[x[property]] = [];
     }
+    // @ts-ignore
     memo[x[property]].push(x);
     return memo;
   }, {});

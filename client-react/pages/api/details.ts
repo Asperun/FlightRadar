@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.query.icao24) {
@@ -9,8 +9,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(planeInfo);
     }
 
-    return res.status(500).json("Server error");
+    return res.status(500).json('Server error');
   }
 
-  return res.status(400).json({ error: "Bad request, include icao24" });
+  return res.status(400).json({ error: 'Bad request, include icao24' });
 }

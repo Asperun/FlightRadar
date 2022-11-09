@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { NextSeo } from "next-seo";
+import { NextSeo } from 'next-seo';
+import type { ReactNode } from 'react';
 
 type Props = {
   children: ReactNode;

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { Plane, PlaneDetails } from "../types/plane";
-import { fetchManufacturerDetails, fetchPlaneImage, fetchTrackDetails } from "../service/requestUtils";
+import { useEffect, useState } from 'react';
+
+import { fetchManufacturerDetails, fetchPlaneImage, fetchTrackDetails } from '../service/requestUtils';
+import type { Plane, PlaneDetails } from '../types/plane';
 
 export const useSelectedPlane = () => {
   const [selectedPlane, setSelectedPlane] = useState<PlaneDetails | null>(null);
@@ -16,7 +17,7 @@ export const useSelectedPlane = () => {
   }, [selectedPlane]);
 
   const fetchAdditionalPlaneData = async (icao24: string) => {
-    if (!icao24) throw new Error("No ICAO24 provided");
+    if (!icao24) throw new Error('No ICAO24 provided');
     setLoading(true);
 
     // We need to make 3 fetch requests to get the all needed plane data and merge it into one object, then mark it as selected
@@ -33,7 +34,7 @@ export const useSelectedPlane = () => {
       ...imageData,
       ...manufacturerData,
       ...trackData,
-      isSelected: true,
+      isSelected: true
     };
 
     setPlaneDetails(merged);
@@ -56,13 +57,13 @@ export const useSelectedPlane = () => {
     setPlaneDetails({
       ...planeDetails,
       longitude: plane.longitude,
-      latitude: plane.latitude,
+      latitude: plane.latitude
     } as PlaneDetails);
   };
 
   return {
     setSelectedPlane: setSelectedPlaneFromOutside,
     getSelectedPlane: getSelectedPlaneFromOutside,
-    updateSelectedPlane: updateSelectedPlaneFromOutside,
+    updateSelectedPlane: updateSelectedPlaneFromOutside
   };
 };

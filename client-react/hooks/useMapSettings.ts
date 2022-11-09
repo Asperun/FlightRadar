@@ -1,24 +1,25 @@
-import { useRecoilState } from "recoil";
-import { maxPlanesState, showLandedState, showPathsState } from "../atoms/settingsAtom";
+import { useRecoilState } from 'recoil';
+
+import { maxPlanesState, showLandedState, showPathsState } from '../atoms/settingsAtom';
 
 export const useMapSettings = () => {
   const [maxPlanes, setMaxPlanes] = useRecoilState(maxPlanesState);
   const [showPaths, setShowPaths] = useRecoilState(showPathsState);
   const [showLanded, setShowLanded] = useRecoilState(showLandedState);
 
-  const setMaxPlanesInternal = (maxPlanes: number) => {
-    localStorage.setItem("maxPlanes", maxPlanes.toString());
-    setMaxPlanes(maxPlanes);
+  const setMaxPlanesInternal = (amount: number) => {
+    localStorage.setItem('maxPlanes', amount.toString());
+    setMaxPlanes(amount);
   };
 
   const setShowLandedPlanesInternal = (showLandedPlanes: boolean) => {
-    localStorage.setItem("showLandedPlanes", showLandedPlanes.toString());
+    localStorage.setItem('showLandedPlanes', showLandedPlanes.toString());
     setShowLanded(showLandedPlanes);
   };
 
-  const setShowPathsInternal = (showPaths: boolean) => {
-    localStorage.setItem("showPaths", showPaths.toString());
-    setShowPaths(showPaths);
+  const setShowPathsInternal = (value: boolean) => {
+    localStorage.setItem('showPaths', value.toString());
+    setShowPaths(value);
   };
 
   return {
@@ -27,6 +28,6 @@ export const useMapSettings = () => {
     showLanded,
     setShowLanded: setShowLandedPlanesInternal,
     showPaths,
-    setShowPaths: setShowPathsInternal,
+    setShowPaths: setShowPathsInternal
   };
 };
