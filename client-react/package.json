@@ -15,9 +15,9 @@
     "format:fix": "prettier --write --ignore-path .gitignore ."
   },
   "dependencies": {
-    "@nivo/core": "0.79.0",
+    "@nivo/core": "0.81.0",
     "@nivo/geo": "0.79.1",
-    "@nivo/line": "0.79.1",
+    "@nivo/line": "0.81.0",
     "bezier-spline": "2.0.0",
     "i18n-iso-countries": "7.5.0",
     "leaflet": "1.9.2",
