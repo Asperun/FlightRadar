@@ -1,0 +1,57 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+.bg-blur {
+  backdrop-filter: blur(12px);
+  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 1));
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.darkTheme {
+  background: #121212;
+  color: #ffffff;
+  opacity: 87%;
+}
+
+.text-color-primary {
+  color: #ffffff;
+  opacity: 87%;
+}
+
+.bg-purple-light {
+  background: #bb86fc;
+}
+
+.text-highlighted {
+  text-shadow: 0 0 6px #fff, 0 0 2px #0fa;
+}
+
+.dark-background {
+  background: #121212;
+}
+
+.dark-surface {
+  background: #1e1e1e;
+}
+
+.maskBg {
+  z-index: -1;
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.9) 5%, transparent 100%);
+}
+
+.fade-to-right {
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 50%, transparent 100%);
+}
